@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "argentina-egypt-research-etl"
+version = "0.1.0"
+description = "Reproducible ETL pipeline for the Argentina-Egypt World Cup research notebook."
+readme = "docs/etl_pipeline.md"
+requires-python = ">=3.11"
+dependencies = [
+  "matplotlib>=3.9",
+  "numpy>=2.0",
+  "pandas>=2.2",
+  "scikit-learn>=1.5",
+]
+
+[project.optional-dependencies]
+notebook = [
+  "ipykernel>=6.29",
+  "nbclient>=0.10",
+  "nbformat>=5.10",
+]
+
+[project.scripts]
+argentina-egypt-etl = "research_etl.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]

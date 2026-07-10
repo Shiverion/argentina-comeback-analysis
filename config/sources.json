@@ -1,0 +1,109 @@
+{
+  "focal_match": {
+    "source_id": "fifa_performance_summary_m95",
+    "url": "https://www.fifatrainingcentre.com/media/native/tournaments/fifa-world-cup/2026/PMSR-M95-ARG-V-EGY.pdf",
+    "target": "data/raw/fifa/fifa_performance_summary_m95.pdf",
+    "tier": "A",
+    "license_note": "Official match document. Preserve the source URL and do not redistribute outside its applicable terms."
+  },
+  "historical_world_cup": {
+    "source_id": "fjelstul_worldcup_v1_2_0",
+    "base_url": "https://raw.githubusercontent.com/jfjelstul/worldcup/35a8667f518b07469182ae16d35574dd0e7a00fb/data-csv",
+    "files": [
+      "matches.csv",
+      "goals.csv",
+      "bookings.csv"
+    ],
+    "target_dir": "data/raw/fjelstul",
+    "license": "CC-BY-SA-4.0",
+    "attribution": "Fjelstul, Joshua C. The Fjelstul World Cup Database v.1.2.0 (2023), https://github.com/jfjelstul/worldcup",
+    "pinned_commit": "35a8667f518b07469182ae16d35574dd0e7a00fb",
+    "pinned_commit_note": "Pinned to the master HEAD commit as of 2026-07-10 (verified byte-identical to the previously cached local copy). Update deliberately if a newer database revision is needed; do not track master."
+  },
+  "statsbomb_open_data": {
+    "source_id": "statsbomb_open_data",
+    "base_url": "https://raw.githubusercontent.com/statsbomb/open-data/b0bc9f22dd77c206ddedc1d742893b3bbe64baec/data",
+    "competition_id": 43,
+    "season_ids": [
+      106,
+      3
+    ],
+    "target_dir": "data/raw/statsbomb",
+    "attribution": "StatsBomb Open Data, https://github.com/statsbomb/open-data",
+    "note": "Optional high-resolution enrichment. Publish derived work with the attribution required by StatsBomb.",
+    "pinned_commit": "b0bc9f22dd77c206ddedc1d742893b3bbe64baec",
+    "pinned_commit_note": "Pinned to the master HEAD commit as of 2026-07-10. Update deliberately if newer StatsBomb Open Data coverage is needed; do not track master."
+  },
+  "threshold_minutes": [
+    70,
+    75,
+    78,
+    80
+  ],
+  "era_sensitivity_start_years": [1930, 1970, 1998, 2010],
+  "model_snapshot_minutes": {
+    "start": 1,
+    "end": 90
+  },
+  "model_validation_gate": {
+    "gate_version": "v0.1_post_hoc_engineering_gate",
+    "chronological_holdout_year": 2022,
+    "late_game_start_minute": 70,
+    "max_overall_class_ece": 0.05,
+    "max_late_game_class_ece": 0.10,
+    "require_positive_brier_skill_against_null": true,
+    "focal_support_time_window_minutes": 5,
+    "focal_support_strength_window": 100,
+    "focal_support_minimum_matches": 20
+  },
+  "team_strength": {
+    "source_id": "jgravier_soccer_elo",
+    "url": "https://raw.githubusercontent.com/JGravier/soccer-elo/a24d031e0ed81cbb4206ff84a2209bbf000ee6d6/csv/ranking_soccer_1901-2023.csv",
+    "target": "data/raw/jgravier/ranking_soccer_1901-2023.csv",
+    "license": "CC-BY-4.0",
+    "attribution": "JGravier, soccer-elo, compiled from eloratings.net World Football Elo Ratings, https://github.com/JGravier/soccer-elo",
+    "pinned_commit": "a24d031e0ed81cbb4206ff84a2209bbf000ee6d6",
+    "source_name": "JGravier soccer-elo (eloratings.net year-end compilation, CC-BY 4.0)",
+    "team_aliases": {
+      "Czech Republic": "Czechia",
+      "Republic of Ireland": "Ireland"
+    },
+    "method_note": "Yearly (Dec 31) Elo ratings. For a match in year Y, each team is assigned its rating from the most recent year strictly before Y, guaranteeing no post-kickoff information leaks in regardless of the match date within Y. fifa_rank and pre_match_win_odds are left blank -- FIFA rankings did not exist before 1992 and no betting-odds source is used, so those columns are not fabricated.",
+    "coverage_note": "Verified to resolve all 1928 (match, team) pairs across the 964-match historical roster with zero missing values."
+  },
+  "focal_team_strength": {
+    "source_id": "world_football_elo_2026_07_06",
+    "reference_target": "data/reference/focal_pre_match_strength.csv",
+    "raw_target": "data/raw/focal/focal_pre_match_strength.csv",
+    "source_url": "https://www.international-football.net/elo-ratings-table?day=06&month=07&year=2026",
+    "as_of_date": "2026-07-06",
+    "method_note": "World Football Elo ratings as of the day before Match 95: Argentina 2151, Egypt 1747. Same rating family as the historical JGravier compilation; stored as a compact source-linked snapshot."
+  },
+  "pmsr_2026": {
+    "source_id": "fifa_pmsr_2026_set_plays",
+    "base_url": "https://www.fifatrainingcentre.com/media/native/tournaments/fifa-world-cup/2026/",
+    "tier": "A",
+    "metric": "Total Penalties (awarded, from the official 'Set Plays' table -- includes scored, saved, and missed penalty kicks; not the same quantity as 'penalty goals scored').",
+    "retrieved_at": "2026-07-10",
+    "matches_covered": "96 of 96 played matches through the Round of 16 (full census at time of retrieval, not a sample).",
+    "extraction_method": "Each match's official PMSR PDF was downloaded and its 'Set Plays' pages (one per team) parsed for the 'Total Penalties' figure. 9 of 96 matches (M06, M09, M10, M31, M33, M34, M55, M59, M78) initially failed extraction because the team-name regex did not include non-ASCII letters (Turkiye/Curacao/Cote d'Ivoire); re-extracted with a locale-aware pattern and verified against the source PDF text. All 96 matches resolved -- no matches were dropped or excluded.",
+    "raw_target": "data/raw/fifa/pmsr_2026_set_plays_extracted.csv",
+    "reference_target": "data/reference/pmsr_2026_set_plays_extracted.csv",
+    "processed_target": "data/processed/pmsr_2026_team_penalties.csv",
+    "vendored_pdfs": "Only Argentina's 5 matches (M19, M43, M70, M86, M95) are kept as raw PDFs under data/raw/fifa/pmsr_2026/ -- the other 91 source PDFs (~500MB total) are not vendored; their per-match figures are preserved in the raw extraction CSV with the exact source_url per row for independent re-verification.",
+    "comparability_note": "This 2026 figure ('penalties awarded' from the official Set Plays table, one in-progress tournament, teams have played 3-5 matches depending on group/knockout path) is NOT directly comparable to the 1930-2022 'penalty_goals_scored' figure computed in discipline.py from the Fjelstul database (a different quantity -- scored only, not awarded -- across 22 completed tournaments). Report side by side; do not merge into a single combined statistic or a single percentile."
+  },
+  "scenario_only": [
+    {
+      "scenario_id": "INC_001_DISALLOWED_GOAL_STANDS",
+      "incident_id": "INC_001",
+      "evidence_status": "reported",
+      "analysis_status": "exploratory_conditional",
+      "decision_correctness_status": "not_assessed",
+      "timing_minutes": [58, 62, 67],
+      "observed_score": {"Argentina": 0, "Egypt": 1},
+      "alternate_score": {"Argentina": 0, "Egypt": 2},
+      "assumption": "Conditional timing grid based on conflicting public reports; no claim that allowing the goal was the correct decision."
+    }
+  ]
+}

@@ -1,0 +1,87 @@
+{
+  "created_at": "2026-07-10T22:09:08+00:00",
+  "pipeline": "research_etl.extract",
+  "records": [
+    {
+      "bytes": 1922,
+      "path": "data/raw/manual/focal_events_reviewed.csv",
+      "retrieved_at": "2026-07-10T22:09:08+00:00",
+      "sha256": "657066049e24b949469c580528e69427c14338610b809aa6f521adb068c26e5a",
+      "source_id": "reference_focal_events_seed",
+      "status": "preserved",
+      "url": "file://data/reference/focal_events_seed.csv"
+    },
+    {
+      "bytes": 4615,
+      "path": "data/raw/manual/incidents_reviewed.csv",
+      "retrieved_at": "2026-07-10T22:09:08+00:00",
+      "sha256": "3df5678bdd184a843bcce4790b320a730dfb6b27365720e47444ec630ac47935",
+      "source_id": "reference_incidents_seed",
+      "status": "preserved",
+      "url": "file://data/reference/incidents_seed.csv"
+    },
+    {
+      "bytes": 5697200,
+      "path": "data/raw/fifa/fifa_performance_summary_m95.pdf",
+      "retrieved_at": "2026-07-10T22:09:08+00:00",
+      "sha256": "21bc978a6755c2db930156803b683e41e9b03d59b11041fe43d4e7a78b1aaf47",
+      "source_id": "fifa_performance_summary_m95",
+      "status": "cached",
+      "url": "https://www.fifatrainingcentre.com/media/native/tournaments/fifa-world-cup/2026/PMSR-M95-ARG-V-EGY.pdf"
+    },
+    {
+      "bytes": 298930,
+      "path": "data/raw/fjelstul/matches.csv",
+      "retrieved_at": "2026-07-10T22:09:08+00:00",
+      "sha256": "037f718764758e7dda3a2918276f85fa8389af1d50999d2a480c8a6a49408875",
+      "source_id": "fjelstul_worldcup_v1_2_0",
+      "status": "cached",
+      "url": "https://raw.githubusercontent.com/jfjelstul/worldcup/35a8667f518b07469182ae16d35574dd0e7a00fb/data-csv/matches.csv"
+    },
+    {
+      "bytes": 734494,
+      "path": "data/raw/fjelstul/goals.csv",
+      "retrieved_at": "2026-07-10T22:09:08+00:00",
+      "sha256": "4fbe990b7f42bb8af00d1587af09359ecfdb4ee4101bb44fda0eb336fc1e5be3",
+      "source_id": "fjelstul_worldcup_v1_2_0",
+      "status": "cached",
+      "url": "https://raw.githubusercontent.com/jfjelstul/worldcup/35a8667f518b07469182ae16d35574dd0e7a00fb/data-csv/goals.csv"
+    },
+    {
+      "bytes": 598373,
+      "path": "data/raw/fjelstul/bookings.csv",
+      "retrieved_at": "2026-07-10T22:09:08+00:00",
+      "sha256": "e1c010ce790fc7729392dc51ceafcb75775b4cc2e3ba39b186efbe6ab19f8969",
+      "source_id": "fjelstul_worldcup_v1_2_0",
+      "status": "cached",
+      "url": "https://raw.githubusercontent.com/jfjelstul/worldcup/35a8667f518b07469182ae16d35574dd0e7a00fb/data-csv/bookings.csv"
+    },
+    {
+      "bytes": 1144345,
+      "path": "data/raw/jgravier/ranking_soccer_1901-2023.csv",
+      "retrieved_at": "2026-07-10T22:09:08+00:00",
+      "sha256": "4231cc970887265f1eb7bc31becc4a4a8a884bfe62dcc8c66fdf1e632ac5144e",
+      "source_id": "jgravier_soccer_elo",
+      "status": "cached",
+      "url": "https://raw.githubusercontent.com/JGravier/soccer-elo/a24d031e0ed81cbb4206ff84a2209bbf000ee6d6/csv/ranking_soccer_1901-2023.csv"
+    },
+    {
+      "bytes": 27218,
+      "path": "data/raw/fifa/pmsr_2026_set_plays_extracted.csv",
+      "retrieved_at": "2026-07-10T22:09:08+00:00",
+      "sha256": "62f8776bad9a1fe3ac9e971ad5c21e0c7122d31462768b06aa5fd617ec9ec4b6",
+      "source_id": "fifa_pmsr_2026_set_plays",
+      "status": "staged",
+      "url": "file://data/reference/pmsr_2026_set_plays_extracted.csv"
+    },
+    {
+      "bytes": 253,
+      "path": "data/raw/focal/focal_pre_match_strength.csv",
+      "retrieved_at": "2026-07-10T22:09:08+00:00",
+      "sha256": "c342a14efc7aba0bc4e92bb4c509a04131e7b2daf7e5de3f05e211b170aa866b",
+      "source_id": "world_football_elo_2026_07_06",
+      "status": "cached",
+      "url": "file://data/reference/focal_pre_match_strength.csv"
+    }
+  ]
+}

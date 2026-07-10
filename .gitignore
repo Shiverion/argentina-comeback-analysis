@@ -1,0 +1,14 @@
+# Local dev environment and caches -- not part of the published analysis.
+.claude/
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ipynb_checkpoints/
+*.executed.ipynb
+*.egg-info/
+
+# Scratch/quarantine data only -- everything else under data/ (raw, processed,
+# manifests, reference) and results/ is tracked so the dataset and analysis
+# outputs ship with the repo, not just the code that regenerates them.
+data/quarantine/

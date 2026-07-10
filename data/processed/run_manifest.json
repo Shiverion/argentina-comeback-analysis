@@ -1,0 +1,55 @@
+{
+  "artifacts": [
+    {
+      "filename": "focal_events.csv",
+      "rows": 6,
+      "sha256": "cc673aa85083000407aa2aa93a231ec909ca0762edcaa8eba1297461b75dcc70"
+    },
+    {
+      "filename": "incidents.csv",
+      "rows": 3,
+      "sha256": "3df5678bdd184a843bcce4790b320a730dfb6b27365720e47444ec630ac47935"
+    },
+    {
+      "filename": "historical_match_events.csv",
+      "rows": 2799,
+      "sha256": "a0328c1d3657acc9891ed2c2646d74cc81136f06bf4e75034bbfdf9b12243547"
+    },
+    {
+      "filename": "historical_snapshots.csv",
+      "rows": 3856,
+      "sha256": "373d18fbe625f6d9c4367a3cf1a6cefb5e1a7aed9b894fbb08a2a62584e8ea74"
+    },
+    {
+      "filename": "pre_match_strength.csv",
+      "rows": 1928,
+      "sha256": "097baca695e0b55f273e1a385132f1422a8b4a7c4f8e1e98e86dce4dbcdc93b9"
+    },
+    {
+      "filename": "focal_pre_match_strength.csv",
+      "rows": 2,
+      "sha256": "3551b9f9708fbc9dc38ecb69b6bfd5125398c9202aad6c1cdb8b11d6851fc786"
+    },
+    {
+      "filename": "pmsr_2026_team_penalties.csv",
+      "rows": 48,
+      "sha256": "41f6fbd4b71844b753d346124099eac908bfcb6abb05e90abfeba585911cb9eb"
+    },
+    {
+      "filename": "model_frame.csv",
+      "rows": 173520,
+      "sha256": "57abf21793113865fd385b0a68197fecd0c9b8019a2bac2c6cc7464f17f2325d"
+    }
+  ],
+  "created_at": "2026-07-10T22:09:21+00:00",
+  "model_status": {
+    "matches": 964,
+    "rows": 173520,
+    "status": "ready"
+  },
+  "notes": {
+    "historical_coverage": "Fjelstul World Cup Database covers men's World Cups through 2022; 2026 focal data is held separately.",
+    "historical_timeline_resolution": "Minute-resolution goals and bookings are placed at the end of their recorded minute."
+  },
+  "pipeline": "research_etl.transform"
+}

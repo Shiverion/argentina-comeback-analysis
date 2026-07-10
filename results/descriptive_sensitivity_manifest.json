@@ -1,0 +1,21 @@
+{
+  "artifacts": [
+    {
+      "path": "results/rarity_era_sensitivity.csv",
+      "rows": 16,
+      "sha256": "8d541974db84b8c766ce4403afeed0a850f67315fbf65689782de5eb9471cacc"
+    },
+    {
+      "path": "results/argentina_discipline_percentiles.csv",
+      "rows": 44,
+      "sha256": "02bcd387635a769ba35a0b13f057f867f0039d486c8d1d7b90e6e90dbcf68e5a"
+    }
+  ],
+  "blocked_extensions": {
+    "broad_international_timeline_baseline": "No licensed broad source with complete event timing is integrated.",
+    "exposure_adjusted_discipline": "Penalty-area entries, challenges, fouls, and referee assignments are not integrated."
+  },
+  "created_at": "2026-07-10T22:11:16+00:00",
+  "pipeline": "research_etl.analysis.descriptive_sensitivity",
+  "status": "ready"
+}

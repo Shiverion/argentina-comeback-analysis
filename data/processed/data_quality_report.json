@@ -1,0 +1,27 @@
+{
+  "error_count": 0,
+  "issues": [
+    {
+      "code": "INCIDENTS_NOT_MODEL_READY",
+      "context": {
+        "incident_count": 3
+      },
+      "message": "Reported or unresolved incidents remain excluded from correctness-assessed analysis; they may appear only in explicitly conditional scenario-only outputs.",
+      "severity": "warning"
+    }
+  ],
+  "metrics": {
+    "focal_events.csv.rows": 6,
+    "focal_pre_match_strength.csv.rows": 2,
+    "historical_match_events.csv.rows": 2799,
+    "historical_snapshots.csv.rows": 3856,
+    "historical_snapshots.eligible_late_two_goal_states": 1186,
+    "incidents.csv.rows": 3,
+    "model_frame.csv.rows": 173520,
+    "model_frame_status": "ready",
+    "pmsr_2026_team_penalties.csv.rows": 48,
+    "pre_match_strength.csv.rows": 1928
+  },
+  "status": "passed_with_warnings",
+  "warning_count": 1
+}

@@ -1,0 +1,236 @@
+{
+  "constant_features": [
+    "is_neutral"
+  ],
+  "focal_output": {
+    "as_of_date": "2026-07-06",
+    "low_support_rows": 6,
+    "path": "results/focal_model_probabilities.csv",
+    "ratings": {
+      "Argentina": 2151.0,
+      "Egypt": 1747.0
+    },
+    "rows": 8,
+    "sha256": "3a8d1aba433a61f48850ff3eda0426ef41e28e28f37dab972e81987d039fdfd6",
+    "status": "ready_exploratory_with_support_warnings",
+    "strength_difference": 404.0,
+    "support_gate": {
+      "minimum_matches": 20,
+      "strength_window": 100.0,
+      "time_window_minutes": 5
+    }
+  },
+  "focal_probability_status": "exploratory_support_limited",
+  "gate": {
+    "chronological_holdout_year": 2022,
+    "focal_support_minimum_matches": 20,
+    "focal_support_strength_window": 100,
+    "focal_support_time_window_minutes": 5,
+    "gate_version": "v0.1_post_hoc_engineering_gate",
+    "late_game_start_minute": 70,
+    "max_late_game_class_ece": 0.1,
+    "max_overall_class_ece": 0.05,
+    "require_positive_brier_skill_against_null": true
+  },
+  "models": {
+    "calibrated_hist_gradient_boosting": {
+      "calibration_design": "Outer grouped holdout; inner 80/20 match-group split for sigmoid calibration.",
+      "checks": {
+        "chronological_brier_beats_null": true,
+        "late_game_ece_within_gate": true,
+        "match_brier_beats_null": true,
+        "overall_ece_within_gate": true,
+        "tournament_brier_beats_null": true
+      },
+      "metrics": {
+        "chronological_holdout": {
+          "accuracy": 0.6454861111111111,
+          "ece_10bin": {
+            "DRAW": 0.05350510957035905,
+            "FOCAL_LOSS": 0.03762924673487064,
+            "FOCAL_WIN": 0.04720050548952877
+          },
+          "log_loss": 0.90892533454544,
+          "max_class_ece": 0.05350510957035905,
+          "multiclass_brier": 0.4861021221347662,
+          "rows": 11520
+        },
+        "chronological_null": {
+          "accuracy": 0.3828125,
+          "ece_10bin": {
+            "DRAW": 0.02229166666666671,
+            "FOCAL_LOSS": 0.011145833333333355,
+            "FOCAL_WIN": 0.011145833333333355
+          },
+          "log_loss": 1.0765280015012988,
+          "max_class_ece": 0.02229166666666671,
+          "multiclass_brier": 0.6527229166666668,
+          "rows": 11520
+        },
+        "match_grouped_late_game": {
+          "accuracy": 0.8211321873147599,
+          "ece_10bin": {
+            "DRAW": 0.07235450370980229,
+            "FOCAL_LOSS": 0.06834727599610661,
+            "FOCAL_WIN": 0.06775058854589024
+          },
+          "log_loss": 0.5106408798979317,
+          "max_class_ece": 0.07235450370980229,
+          "multiclass_brier": 0.2838166868824215,
+          "rows": 40488
+        },
+        "match_grouped_null": {
+          "accuracy": 0.3724066390041494,
+          "ece_10bin": {
+            "DRAW": 5.0332497033012125e-06,
+            "FOCAL_LOSS": 2.5166248516228507e-06,
+            "FOCAL_WIN": 2.5166248516228507e-06
+          },
+          "log_loss": 1.0845879188781031,
+          "max_class_ece": 5.0332497033012125e-06,
+          "multiclass_brier": 0.6577116095746336,
+          "rows": 173520
+        },
+        "match_grouped_oof": {
+          "accuracy": 0.6412056247118488,
+          "ece_10bin": {
+            "DRAW": 0.022374291250980664,
+            "FOCAL_LOSS": 0.025366441067272164,
+            "FOCAL_WIN": 0.034002430775771114
+          },
+          "log_loss": 0.8125293799612998,
+          "max_class_ece": 0.034002430775771114,
+          "multiclass_brier": 0.4722532731931018,
+          "rows": 173520
+        },
+        "tournament_grouped_null": {
+          "accuracy": 0.3724066390041494,
+          "ece_10bin": {
+            "DRAW": 0.00021838866325046835,
+            "FOCAL_LOSS": 0.00010919433162520642,
+            "FOCAL_WIN": 0.00010919433162520642
+          },
+          "log_loss": 1.0846764877284747,
+          "max_class_ece": 0.00021838866325046835,
+          "multiclass_brier": 0.657762563674849,
+          "rows": 173520
+        },
+        "tournament_grouped_oof": {
+          "accuracy": 0.6378745965882895,
+          "ece_10bin": {
+            "DRAW": 0.025381603810868836,
+            "FOCAL_LOSS": 0.028449573054013303,
+            "FOCAL_WIN": 0.027766273961595794
+          },
+          "log_loss": 0.821839251370205,
+          "max_class_ece": 0.028449573054013303,
+          "multiclass_brier": 0.47714575526818215,
+          "rows": 173520
+        }
+      },
+      "status": "passed"
+    },
+    "multinomial_logistic": {
+      "checks": {
+        "chronological_brier_beats_null": true,
+        "late_game_ece_within_gate": false,
+        "match_brier_beats_null": true,
+        "overall_ece_within_gate": true,
+        "tournament_brier_beats_null": true
+      },
+      "metrics": {
+        "chronological_holdout": {
+          "accuracy": 0.6460069444444444,
+          "ece_10bin": {
+            "DRAW": 0.04261853833255486,
+            "FOCAL_LOSS": 0.06589818995590825,
+            "FOCAL_WIN": 0.06589818995590825
+          },
+          "log_loss": 0.8785828119161203,
+          "max_class_ece": 0.06589818995590825,
+          "multiclass_brier": 0.4938342952335396,
+          "rows": 11520
+        },
+        "chronological_null": {
+          "accuracy": 0.3828125,
+          "ece_10bin": {
+            "DRAW": 0.02229166666666671,
+            "FOCAL_LOSS": 0.011145833333333355,
+            "FOCAL_WIN": 0.011145833333333355
+          },
+          "log_loss": 1.0765280015012988,
+          "max_class_ece": 0.02229166666666671,
+          "multiclass_brier": 0.6527229166666668,
+          "rows": 11520
+        },
+        "match_grouped_late_game": {
+          "accuracy": 0.8319008101165778,
+          "ece_10bin": {
+            "DRAW": 0.12498411247312821,
+            "FOCAL_LOSS": 0.07339270068809577,
+            "FOCAL_WIN": 0.07339270068809578
+          },
+          "log_loss": 0.5051936557083948,
+          "max_class_ece": 0.12498411247312821,
+          "multiclass_brier": 0.28918965004376773,
+          "rows": 40488
+        },
+        "match_grouped_null": {
+          "accuracy": 0.3724066390041494,
+          "ece_10bin": {
+            "DRAW": 5.0332497033012125e-06,
+            "FOCAL_LOSS": 2.5166248516228507e-06,
+            "FOCAL_WIN": 2.5166248516228507e-06
+          },
+          "log_loss": 1.0845879188781031,
+          "max_class_ece": 5.0332497033012125e-06,
+          "multiclass_brier": 0.6577116095746336,
+          "rows": 173520
+        },
+        "match_grouped_oof": {
+          "accuracy": 0.6605982019363762,
+          "ece_10bin": {
+            "DRAW": 0.030503358980000415,
+            "FOCAL_LOSS": 0.026004254655820645,
+            "FOCAL_WIN": 0.026004254655820628
+          },
+          "log_loss": 0.7851776094915632,
+          "max_class_ece": 0.030503358980000415,
+          "multiclass_brier": 0.4562916598749614,
+          "rows": 173520
+        },
+        "tournament_grouped_null": {
+          "accuracy": 0.3724066390041494,
+          "ece_10bin": {
+            "DRAW": 0.00021838866325046835,
+            "FOCAL_LOSS": 0.00010919433162520642,
+            "FOCAL_WIN": 0.00010919433162520642
+          },
+          "log_loss": 1.0846764877284747,
+          "max_class_ece": 0.00021838866325046835,
+          "multiclass_brier": 0.657762563674849,
+          "rows": 173520
+        },
+        "tournament_grouped_oof": {
+          "accuracy": 0.6624193176579068,
+          "ece_10bin": {
+            "DRAW": 0.03349944339573564,
+            "FOCAL_LOSS": 0.02554049343830994,
+            "FOCAL_WIN": 0.02554049343830994
+          },
+          "log_loss": 0.7832892261322995,
+          "max_class_ece": 0.03349944339573564,
+          "multiclass_brier": 0.4546487785720949,
+          "rows": 173520
+        }
+      },
+      "status": "failed_validation_gate"
+    }
+  },
+  "notes": [
+    "Gate v0.1 was frozen after exploratory inspection of the initial baseline and is not a preregistration.",
+    "Rows are minute-level team perspectives; all validation splits keep complete matches together."
+  ],
+  "selected_model": "calibrated_hist_gradient_boosting",
+  "status": "passed"
+}
