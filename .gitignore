@@ -12,3 +12,7 @@ __pycache__/
 # manifests, reference) and results/ is tracked so the dataset and analysis
 # outputs ship with the repo, not just the code that regenerates them.
 data/quarantine/
+
+# Intermediate build artifact for the PDF article -- regenerate with
+# article/generate_article.py; only the final PDF is tracked.
+article/*.html
