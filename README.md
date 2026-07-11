@@ -14,8 +14,8 @@ A reproducible, evidence-tiered statistical and counterfactual research project.
 
 | Path | Contents |
 | --- | --- |
-| `data/raw/` | Vendored source data: FIFA Performance Summary PDFs (focal match + Argentina's 2026 matches), Fjelstul World Cup Database (1930-2022), JGravier Elo ratings, StatsBomb open data samples |
-| `data/processed/` | Canonical, notebook-ready tables produced by the ETL pipeline |
+| `data/raw/` | Vendored source data: FIFA Performance Summary PDFs (focal match + Argentina's 2026 matches), Fjelstul World Cup Database (1930-2022), JGravier Elo ratings |
+| `data/processed/` | Canonical, notebook-ready tables produced by the ETL pipeline, including the compact StatsBomb-derived club/international event and snapshot tables (2,379 matches, extracted from StatsBomb Open Data — see `config/sources.json:statsbomb_history`) |
 | `data/reference/` | Small, version-controlled seed inputs (manual review templates and compact source-linked extracts) |
 | `src/research_etl/` | The ETL/analysis package: extraction, transformation, quality gates, counterfactual simulation, discipline statistics, model validation |
 | `tests/` | Test suite (`pytest`) covering every analytical module |
@@ -33,8 +33,8 @@ uv run --project . --extra notebook pytest
 
 ## Headline findings (see the [full report](results/analysis_report.md) for denominators, methods, and caveats)
 
-- **Zero** comparable two-goal, late-game comebacks in 964 men's World Cup matches (1930-2022) at any pre-registered threshold minute — robust across four different era slices.
-- Argentina's own modelled win probability while 0-2 down is genuinely uncertain: two legitimate estimation methods disagree by an order of magnitude in the 66'-80' window, both reported rather than cherry-picked.
+- **Zero** comparable two-goal, late-game comebacks in 964 men's World Cup matches (1930-2022) at any pre-registered threshold minute — robust across four different era slices, and cross-validated against a fully independent 2,193-match club-football sample (2 comebacks found — a ~1-in-300-to-1-in-700 rate, still solidly rare, not literally zero).
+- Argentina's own modelled win probability while 0-2 down is genuinely uncertain: two legitimate estimation methods disagree by an order of magnitude in the 66'-80' window, both reported rather than cherry-picked — though the World-Cup-only numbers are corroborated to within ~1 percentage point by the independent club-football dataset.
 - A conditional (non-decision-correctness) sensitivity check shows a disputed disallowed goal would have been a materially meaningful (3-5 percentage point) swing — explicitly not a claim the officiating decision was wrong.
 - Argentina's elevated penalty/card rates in 2022 and its penalty-awarded lead in 2026 are real, descriptive, and directionally consistent — but not unique to 2022 (1958, 1982, 1990 show equal-or-higher rates on the same metrics) and not adjusted for the confounds (possession, playing style, opponent quality) that would be required to call this evidence of bias.
 

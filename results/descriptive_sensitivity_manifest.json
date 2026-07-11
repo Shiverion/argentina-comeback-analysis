@@ -12,10 +12,11 @@
     }
   ],
   "blocked_extensions": {
-    "broad_international_timeline_baseline": "No licensed broad source with complete event timing is integrated.",
+    "broad_international_timeline_baseline": "See run_broader_baseline_sensitivity() / results/broader_baseline_rarity.csv for the club and non-World-Cup international cross-check (StatsBomb open data), reported as separate tiers rather than pooled into this World-Cup-only table.",
+    "club_discipline_check": "Club-competition discipline stats are not computed -- club competitions are not FIFA-officiated and are not relevant to the Argentina/FIFA bias question this section addresses.",
     "exposure_adjusted_discipline": "Penalty-area entries, challenges, fouls, and referee assignments are not integrated."
   },
-  "created_at": "2026-07-10T22:11:16+00:00",
+  "created_at": "2026-07-11T00:00:40+00:00",
   "pipeline": "research_etl.analysis.descriptive_sensitivity",
   "status": "ready"
 }

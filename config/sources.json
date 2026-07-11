@@ -79,6 +79,25 @@
     "as_of_date": "2026-07-06",
     "method_note": "World Football Elo ratings as of the day before Match 95: Argentina 2151, Egypt 1747. Same rating family as the historical JGravier compilation; stored as a compact source-linked snapshot."
   },
+  "statsbomb_history": {
+    "source_id": "statsbomb_open_data_history",
+    "base_url": "https://raw.githubusercontent.com/statsbomb/open-data/b0bc9f22dd77c206ddedc1d742893b3bbe64baec/data",
+    "pinned_commit": "b0bc9f22dd77c206ddedc1d742893b3bbe64baec",
+    "attribution": "StatsBomb Open Data, https://github.com/statsbomb/open-data",
+    "purpose": "Broadens the men's senior baseline beyond World-Cup-only per Project.md S6.3, using every male, event-level (minute+second goal/card timing) competition StatsBomb makes freely available as of the pinned commit.",
+    "competition_count": 53,
+    "tiers": {
+      "club": "Champions League, 1. Bundesliga, La Liga, Ligue 1, Premier League, Serie A, UEFA Europa League, Copa del Rey -- 2193 matches across the seasons StatsBomb has released (mostly single showcase matches per season, plus four full 2015/16 seasons and one full La Liga-adjacent release).",
+      "intl": "Copa America 2024, UEFA Euro 2020 and 2024, Africa Cup of Nations 2023 -- 186 matches, non-World-Cup senior international tournaments."
+    },
+    "non_pooling_rule": "club and intl tiers are kept separate from each other and from the Fjelstul World Cup baseline in every downstream table -- never merged into one combined rarity or discipline figure. Club matches also are not used for the Argentina-specific discipline/bias check (Section 5 of results/analysis_report.md), since club competitions are not FIFA-officiated and are irrelevant to that specific question.",
+    "excluded_by_design": "AFF Championship (Southeast Asia) has no known freely available, minute-level, licensed event source and is not included -- documented gap, not a silent omission. FIFA U20 World Cup, Indian Super League, MLS, NASL, and Argentine Liga Profesional were excluded as not senior/not top-tier by the same standard applied elsewhere in this project.",
+    "processed_targets": [
+      "data/processed/statsbomb_historical_match_events.csv",
+      "data/processed/statsbomb_historical_snapshots.csv"
+    ],
+    "extraction_method": "For each (competition_id, season_id) pair, downloaded the match list and every match's full event stream, then kept only regulation-time (period 1-2) Shot-outcome=Goal, Own Goal For, and card (Foul Committed/Bad Behaviour with Red Card or Second Yellow) events -- implemented in src/research_etl/statsbomb_history.py, tested in tests/test_statsbomb_history.py. Raw multi-GB per-match event JSON files are not vendored (same policy as pmsr_2026); only the compact extracted event/snapshot CSVs are committed (both under data/processed/, matching where the analogous Fjelstul-derived tables live), with the pinned commit above allowing independent re-fetch of any match by ID."
+  },
   "pmsr_2026": {
     "source_id": "fifa_pmsr_2026_set_plays",
     "base_url": "https://www.fifatrainingcentre.com/media/native/tournaments/fifa-world-cup/2026/",

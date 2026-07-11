@@ -1,0 +1,18 @@
+{
+  "artifacts": [
+    {
+      "path": "results/broader_baseline_rarity.csv",
+      "rows": 8,
+      "sha256": "2adbb29de19393b99b42619dd93b4e3aa7581e710581751c565f2db9d9b4db66"
+    },
+    {
+      "path": "results/broader_baseline_continuation.csv",
+      "rows": 16,
+      "sha256": "9942fa687aa2bc65c935518b0b77f441099143509cb8b5402e4a334060550f3c"
+    }
+  ],
+  "created_at": "2026-07-11T00:00:41+00:00",
+  "non_pooling_rule": "club and intl tiers are reported separately from each other and from the World-Cup-only baseline in every row above -- never combined into one figure.",
+  "pipeline": "research_etl.analysis.broader_baseline_sensitivity",
+  "status": "ready"
+}

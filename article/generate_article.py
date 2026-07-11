@@ -270,6 +270,11 @@ def build_html() -> str:
   Supaya hasil ini tidak dianggap cuma kebetulan karena memasukkan data era 1930-an yang gaya mainnya sangat berbeda, kami mengulang perhitungan yang sama hanya dengan pertandingan sejak 1970, 1998, dan 2010. Hasilnya tetap sama di semua era: <strong>nol comeback</strong>, di semua ambang batas menit. Yang berubah hanya lebar interval ketidakpastiannya (makin sempit sampelnya, makin lebar batas atasnya &mdash; naik sampai 5,7% di irisan data 2010 ke atas) &mdash; tapi arah temuannya tidak goyah.
 </div>
 
+<div class="callout fix">
+  <span class="tag">Sampel Lebih Besar</span>
+  Kami juga menguji ulang dengan data yang jauh lebih besar: 2.193 pertandingan klub top (Liga Champions, lima liga top Eropa, dll) di luar Piala Dunia. Hasilnya: comeback seperti ini <strong>bukan nol mutlak</strong> &mdash; ada 2 kejadian dari 701 pertandingan yang relevan (sekitar 1 banding 300&ndash;700), yaitu <strong>Leicester City</strong> (tertinggal 0&ndash;2 dari Aston Villa) dan <strong>West Ham United</strong> (tertinggal 0&ndash;2 dari Everton), keduanya di Liga Inggris musim 2015/2016. Ini memperjelas, bukan membatalkan, temuan awal: comeback seperti ini tetap sangat langka, bukan mustahil secara matematis.
+</div>
+
 <h3>Tapi Berapa Peluang Argentina, Tepatnya?</h3>
 
 <p>Di sinilah kejujuran data menjadi penting. Ada dua cara sah untuk menghitung peluang Argentina menang saat tertinggal 0&ndash;2, dan keduanya memberi jawaban yang <strong>beda sepuluh kali lipat</strong>. Metode pertama membandingkan ke <em>semua</em> tim dalam sejarah yang pernah tertinggal segitu &mdash; termasuk tim-tim lemah yang memang jarang mampu membalas. Metode kedua hanya membandingkan ke situasi di mana tim yang tertinggal punya kekuatan setara Argentina (memakai rating Elo) &mdash; lebih relevan, tapi sampelnya jadi sangat kecil (kadang cuma 1&ndash;3 pertandingan pembanding).</p>

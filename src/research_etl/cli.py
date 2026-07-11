@@ -5,7 +5,11 @@ import json
 from pathlib import Path
 from typing import Sequence
 
-from research_etl.analysis import run_descriptive_sensitivity, run_scenario_only_analysis
+from research_etl.analysis import (
+    run_broader_baseline_sensitivity,
+    run_descriptive_sensitivity,
+    run_scenario_only_analysis,
+)
 from research_etl.modeling import run_model_validation
 from research_etl.paths import ProjectPaths
 from research_etl.quality import validate_processed
@@ -59,6 +63,15 @@ def _validate_or_return(paths: ProjectPaths) -> int:
     return 1 if report.error_count else 0
 
 
+def _try_broader_baseline(paths: ProjectPaths) -> dict:
+    """Optional: only runs once data/processed/statsbomb_historical_*.csv exist."""
+
+    try:
+        return run_broader_baseline_sensitivity(paths)
+    except SourceError as error:
+        return {"status": "pending", "reason": str(error)}
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     parser = _parser()
     args = parser.parse_args(argv)
@@ -93,6 +106,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                     "scenario_only": run_scenario_only_analysis(paths),
                     "model_validation": run_model_validation(paths),
                     "descriptive_sensitivity": run_descriptive_sensitivity(paths),
+                    "broader_baseline_sensitivity": _try_broader_baseline(paths),
                 }
             )
             return 0
@@ -111,6 +125,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                     "scenario_only": run_scenario_only_analysis(paths),
                     "model_validation": run_model_validation(paths),
                     "descriptive_sensitivity": run_descriptive_sensitivity(paths),
+                    "broader_baseline_sensitivity": _try_broader_baseline(paths),
                 }
                 if status == 0 else None
             )

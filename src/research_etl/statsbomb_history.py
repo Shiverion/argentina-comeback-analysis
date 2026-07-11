@@ -1,0 +1,213 @@
+"""Goal/red-card timelines from StatsBomb open-data events (Project.md S6.3 broader baseline).
+
+Separate from the Fjelstul World Cup source. Club competitions (leagues, UCL,
+domestic cups) and non-World-Cup international tournaments (Copa America,
+UEFA Euro, Africa Cup of Nations) are extracted into the same event-column
+shape as historical_match_events.csv, but kept in their own `competition_tier`
+("club" / "intl") rather than pooled with each other or with the World Cup --
+squad-selection context and stakes differ enough that Project.md's own
+anti-pooling principle (S5.5) applies here too. Every downstream rarity or
+win-probability table built from this source must report each tier
+separately, alongside the World Cup baseline, never merged into one figure.
+"""
+
+from __future__ import annotations
+
+from typing import Any
+
+import pandas as pd
+
+RED_CARD_NAMES = {"Red Card", "Second Yellow"}
+
+
+def extract_match_timeline(
+    match_meta: dict[str, Any],
+    events: list[dict[str, Any]],
+    *,
+    tournament: str,
+    tier: str,
+) -> list[dict[str, Any]]:
+    """One row per goal/red-card event for a single match, in historical-event-table shape."""
+
+    home_team = match_meta["home_team"]["home_team_name"]
+    away_team = match_meta["away_team"]["away_team_name"]
+    match_id = match_meta["match_id"]
+    year = int(str(match_meta["match_date"])[:4])
+    stage = match_meta.get("competition_stage") or {}
+    stage_name = stage.get("name", "") if isinstance(stage, dict) else ""
+
+    raw_rows: list[dict[str, Any]] = []
+    for event in events:
+        period = event.get("period")
+        if period not in (1, 2):
+            continue
+        minute = event.get("minute")
+        if minute is None:
+            continue
+        second = event.get("second", 0) or 0
+        elapsed_seconds = int(minute) * 60 + int(second)
+        team_name = (event.get("team") or {}).get("name")
+        if not team_name:
+            continue
+        event_type = event["type"]["name"]
+
+        is_goal = (
+            event_type == "Shot" and (event.get("shot") or {}).get("outcome", {}).get("name") == "Goal"
+        ) or event_type == "Own Goal For"
+        if is_goal:
+            raw_rows.append(
+                {
+                    "elapsed_seconds": elapsed_seconds,
+                    "period": period,
+                    "event_team": team_name,
+                    "event_type": "GOAL",
+                    "order": 0,
+                    "event_id": f"{match_id}_{event['id']}",
+                }
+            )
+            continue
+
+        card = None
+        if event_type == "Foul Committed":
+            card = ((event.get("foul_committed") or {}).get("card") or {}).get("name")
+        elif event_type == "Bad Behaviour":
+            card = ((event.get("bad_behaviour") or {}).get("card") or {}).get("name")
+        if card in RED_CARD_NAMES:
+            raw_rows.append(
+                {
+                    "elapsed_seconds": elapsed_seconds,
+                    "period": period,
+                    "event_team": team_name,
+                    "event_type": "RED_CARD",
+                    "order": 1,
+                    "event_id": f"{match_id}_{event['id']}",
+                }
+            )
+
+    raw_rows.sort(key=lambda r: (r["elapsed_seconds"], r["order"], r["event_id"]))
+
+    home_score = away_score = home_red = away_red = 0
+    out_rows: list[dict[str, Any]] = []
+    for row in raw_rows:
+        if row["event_type"] == "GOAL":
+            if row["event_team"] == home_team:
+                home_score += 1
+            elif row["event_team"] == away_team:
+                away_score += 1
+            else:
+                continue
+        else:
+            if row["event_team"] == home_team:
+                home_red += 1
+            elif row["event_team"] == away_team:
+                away_red += 1
+            else:
+                continue
+        out_rows.append(
+            {
+                "match_id": str(match_id),
+                "event_id": row["event_id"],
+                "tournament": tournament,
+                "year": year,
+                "stage": stage_name,
+                "period": row["period"],
+                "elapsed_seconds": row["elapsed_seconds"],
+                "home_team": home_team,
+                "away_team": away_team,
+                "event_team": row["event_team"],
+                "event_type": row["event_type"],
+                "outcome": "confirmed",
+                "home_score": home_score,
+                "away_score": away_score,
+                "home_red_cards": home_red,
+                "away_red_cards": away_red,
+                "is_neutral": tier == "intl",
+                "source_name": "StatsBomb Open Data",
+                "source_version": "b0bc9f22",
+                "competition_tier": tier,
+            }
+        )
+    return out_rows
+
+
+def _state_at(events: list[dict[str, Any]], elapsed_seconds: int) -> dict[str, int]:
+    previous = [e for e in events if e["elapsed_seconds"] <= elapsed_seconds]
+    if not previous:
+        return {"home_score": 0, "away_score": 0, "home_red_cards": 0, "away_red_cards": 0}
+    latest = max(previous, key=lambda e: e["elapsed_seconds"])
+    return {
+        "home_score": latest["home_score"],
+        "away_score": latest["away_score"],
+        "home_red_cards": latest["home_red_cards"],
+        "away_red_cards": latest["away_red_cards"],
+    }
+
+
+def build_snapshots(events_df: pd.DataFrame, matches_meta: list[dict[str, Any]], *, thresholds: list[int]) -> pd.DataFrame:
+    """One row per (match, threshold) from the trailing team's perspective -- mirrors transform.py."""
+
+    by_match: dict[str, list[dict[str, Any]]] = {}
+    for row in events_df.to_dict("records"):
+        by_match.setdefault(row["match_id"], []).append(row)
+
+    rows: list[dict[str, Any]] = []
+    for meta in matches_meta:
+        match_id = str(meta["match_id"])
+        match_events = sorted(by_match.get(match_id, []), key=lambda r: r["elapsed_seconds"])
+        home_team = meta["home_team"]["home_team_name"]
+        away_team = meta["away_team"]["away_team_name"]
+        tournament = meta["_tournament"]
+        year = meta["_year"]
+        tier = meta["_tier"]
+
+        final_home = match_events[-1]["home_score"] if match_events else 0
+        final_away = match_events[-1]["away_score"] if match_events else 0
+
+        for threshold in thresholds:
+            state = _state_at(match_events, threshold * 60)
+            home_score, away_score = state["home_score"], state["away_score"]
+            if home_score < away_score:
+                trailing_team, leading_team = home_team, away_team
+                goal_difference = home_score - away_score
+                trailing_red_diff = state["home_red_cards"] - state["away_red_cards"]
+                trailing_final, leading_final = final_home, final_away
+            elif away_score < home_score:
+                trailing_team, leading_team = away_team, home_team
+                goal_difference = away_score - home_score
+                trailing_red_diff = state["away_red_cards"] - state["home_red_cards"]
+                trailing_final, leading_final = final_away, final_home
+            else:
+                trailing_team, leading_team = pd.NA, pd.NA
+                goal_difference = 0
+                trailing_red_diff = 0
+                trailing_final, leading_final = home_score, away_score
+
+            if pd.isna(trailing_team):
+                result = "NOT_TRAILING"
+            elif trailing_final > leading_final:
+                result = "TRAILING_TEAM_WIN"
+            elif trailing_final == leading_final:
+                result = "TRAILING_TEAM_DRAW"
+            else:
+                result = "TRAILING_TEAM_LOSS"
+
+            rows.append(
+                {
+                    "match_id": match_id,
+                    "threshold_minute": threshold,
+                    "tournament": tournament,
+                    "year": year,
+                    "home_team": home_team,
+                    "away_team": away_team,
+                    "trailing_team": trailing_team,
+                    "leading_team": leading_team,
+                    "goal_difference": goal_difference,
+                    "red_card_difference": trailing_red_diff,
+                    "regulation_result": result,
+                    "is_neutral": tier == "intl",
+                    "competition_tier": tier,
+                    "source_name": "StatsBomb Open Data",
+                    "source_version": "b0bc9f22",
+                }
+            )
+    return pd.DataFrame(rows)

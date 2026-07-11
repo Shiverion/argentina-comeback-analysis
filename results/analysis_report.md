@@ -13,7 +13,7 @@ Argentina trailed Egypt 0-2 with roughly ten minutes of regulation time left and
 1. **How rare was this, statistically?** Very rare among comparable historical matches — but the sample of matches that ever reached this exact state is small, and the answer changes depending on how "comparable" is defined.
 2. **Does the evidence support a claim of favorable officiating toward Argentina, in this match or since 2022?** No single result here proves or disproves that. Every quantitative check below is either (a) a raw descriptive count with known confounds, or (b) an explicitly conditional "if this alternate decision had been made" sensitivity analysis with `decision_correctness_status = not_assessed`. None of it should be read as a finding of bias, corruption, or manipulation.
 
-**What is genuinely well-supported:** the comeback was historically unprecedented within this dataset (0 comparable comebacks in over 270 matches across 22 tournaments, at every pre-registered threshold minute). **What is genuinely uncertain:** the specific win-probability at each match-state, because most of those states have almost no comparable historical matches to estimate from (as few as one). **What is exploratory:** the "Argentina since 2022" discipline and 2026-penalty checks, which are directional data points with real confounds, not proof of anything.
+**What is genuinely well-supported:** the comeback was extraordinarily rare within the World Cup record (0 comparable comebacks in 964 matches across 22 tournaments, at every pre-registered threshold minute) and remains rare — roughly 1-in-300-to-1-in-700, not literally zero — when cross-checked against a 2,193-match sample of club football, an independent dataset that also confirms the World Cup's win-probability curve to within about one percentage point at every checkpoint. **What is genuinely uncertain:** the specific win-probability at each match-state once strength is conditioned on, because those states have almost no comparable historical matches to estimate from (as few as one). **What is exploratory:** the "Argentina since 2022" discipline and 2026-penalty checks, which are directional data points with real confounds, not proof of anything.
 
 ---
 
@@ -66,6 +66,29 @@ To check robustness, the same calculation was re-run restricting the sample to m
 
 The finding is directionally stable — zero comebacks in every era slice — but the *uncertainty band widens* as the sample shrinks (up to ~5.7% upper bound in the smallest, most recent slice). **Read this as:** "extremely rare, and this isn't an artifact of stale 1930s-era data," not as "impossible to a precise decimal."
 
+### Broader baseline: club competitions and non-World-Cup internationals
+
+Project.md §6.3 calls for a baseline broader than World-Cup-only. The table above uses only the Fjelstul World Cup database. This section re-runs the identical "trailing by 2+ goals" calculation on StatsBomb's freely available, event-level (minute+second goal/card timing) open data: 53 additional competition/season releases, covering elite club competitions (Champions League, the "big five" European leagues, Copa del Rey, Europa League — **2,193 matches**) and non-World-Cup senior international tournaments (Copa América 2024, UEFA Euro 2020/2024, Africa Cup of Nations 2023 — **186 matches**).
+
+**Per the methodology decision for this expansion: club and international-non-World-Cup results are kept in their own rows below, and are never merged with each other or with the World Cup baseline into one number.** Squad-selection context (club vs. country) and stakes differ enough that pooling them would be exactly the kind of unlabelled population-mixing Project.md §5.5 warns against.
+
+![Broader baseline rarity](assets/07_broader_baseline_rarity.png)
+
+| Tier | Total matches | Threshold | Eligible (trailing 2+) | Comebacks | Empirical rate | Wilson 95% upper bound |
+| --- | --- | --- | --- | --- | --- | --- |
+| Club | 2,193 | 70' | 701 | **2** | 0.29% | 1.03% |
+| Club | 2,193 | 75' | 732 | 1 | 0.14% | 0.77% |
+| Club | 2,193 | 78' | 762 | 0 | 0.00% | 0.50% |
+| Club | 2,193 | 80' | 766 | 0 | 0.00% | 0.50% |
+| Intl non-WC | 186 | 70' | 35 | 0 | 0.00% | 9.89% |
+| Intl non-WC | 186 | 75' | 38 | 0 | 0.00% | 9.18% |
+| Intl non-WC | 186 | 78' | 42 | 0 | 0.00% | 8.38% |
+| Intl non-WC | 186 | 80' | 45 | 0 | 0.00% | 7.87% |
+
+**The World-Cup-only "zero, ever" finding does not fully replicate at club level once the sample gets 2.3x bigger.** Two Premier League 2015/16 matches did come back from a 2+ deficit at the 70-minute mark: **Leicester City** (down 0-2 to Aston Villa) and **West Ham United** (down 0-2 at home to Everton) both won. This is genuinely informative, not a contradiction: with a large enough sample, a ~0.3% event does eventually show up. It sharpens rather than undermines the headline number — the honest statement is "roughly 1-in-300-to-1-in-700 in club football, and not observed at all in 964 World Cup matches specifically," not "mathematically impossible."
+
+The intl-non-WC tier is too small (35-45 eligible matches) to be very informative on its own — its Wilson upper bound is 6-8x wider than the club tier's — but it does not contradict the direction of either other tier.
+
 ---
 
 ## 3. Was this specific match-state actually improbable? (Stage C, calibrated model)
@@ -116,6 +139,24 @@ Two different, both legitimate, estimation methods were used, and **they give me
 **Why the two methods disagree, and which to trust:** at 66'-80', Method 1 says ~0.6-1.1% and Method 2 says ~12-17% — an order of magnitude apart. This is not a bug; it is a real methodological trade-off. Method 1 pools *every* historical team that was ever 1-2 goals down late, including many weak, non-elite sides that were never likely to come back regardless of the deficit — this likely *understates* Argentina's true chances, since Argentina entered the match as the stronger side (2151 vs 1747 Elo). Method 2 restricts the comparison to only strength-matched situations, which is the more relevant comparison for "a team this strong, in this deficit" — but restricting on strength shrinks the usable historical sample to as few as **one to three matches**, which is nowhere near enough to trust a specific percentage.
 
 **The honest conclusion is a range, not a point estimate:** Argentina's true chances at 0-2 down in the mid-60s to high-70s minute range were almost certainly low — probably somewhere in the low single digits to the high teens — but this analysis cannot responsibly narrow it further than that. Both numbers are directionally informative but statistically fragile at these minutes; only the 82' (tied) and 91' (won) checkpoints rest on a reasonably sized comparison set. **Any article should quote this as a range with both methods disclosed and the sample size (`n`) shown, not a single headline percentage.**
+
+### A third, independent check: does club football agree?
+
+Method 1's World-Cup-only numbers above rest on a pool of at most 388 team-states at any one checkpoint. The 2,193-match club dataset and 186-match non-WC international dataset introduced in Section 2 let the *same* Method-1-style lookup (exact elapsed second, exact goal difference, no strength conditioning) run again on two fully independent samples:
+
+![Broader baseline continuation](assets/08_broader_baseline_continuation.png)
+
+| Minute | World Cup (Fjelstul) | Club (StatsBomb, n team-states) | Intl non-WC (StatsBomb, n team-states) |
+| --- | --- | --- | --- |
+| 66' | 0.60% | 0.97% (n=411) | 0.00% (n=18) |
+| 70' | 0.00% | 0.47% (n=427) | 0.00% (n=21) |
+| 75' | 0.00% | 0.24% (n=421) | 0.00% (n=23) |
+| 78' | 1.03% | 1.87% (n=857) | 0.00% (n=78) |
+| 80' | 1.05% | 1.27% (n=869) | 0.00% (n=75) |
+| 82' | 12.78% | 13.75% (n=1,098) | 13.08% (n=130) |
+| 91' | 96.67% | 95.00% (n=800) | 85.51% (n=69) |
+
+The club-competition curve — with 2-3x the comparable-state sample of the World Cup data at most checkpoints — lands within about one percentage point of the World Cup numbers at every single checkpoint from 66' to 91'. This is a meaningful cross-validation: **it was not guaranteed that a much larger, fully independent dataset would agree this closely.** It substantially increases confidence that Method 1's "low single-digit percent" range for the 66'-80' window is a real feature of football, not a small-sample artifact specific to World Cup history. The non-WC international tier again tracks the same direction but is too small to move the estimate on its own.
 
 ---
 
@@ -189,7 +230,7 @@ Following `Project.md` §9's four-tier interpretation ladder:
 
 | Claim tier | Supported here? |
 | --- | --- |
-| **1. Rare comeback** — the observed state had a low historical/modelled win probability | **Yes, strongly.** Zero comparable comebacks in 270+ historical matches at every pre-registered threshold, robust across four era slices. |
+| **1. Rare comeback** — the observed state had a low historical/modelled win probability | **Yes, strongly.** Zero comparable comebacks in 964 World Cup matches at every pre-registered threshold, robust across four era slices; a much larger 2,193-match club-football cross-check finds the same event at roughly a 1-in-300-to-1-in-700 rate, not literally zero but still solidly in "rare" territory. |
 | **2. Material sensitivity** — a specific validated alternate state changes the modelled probability by a meaningful margin | **Yes, conditionally.** The disallowed-goal scenario shows a 3-5pp swing that doesn't cross zero — but this is explicitly `evidence_status=reported`, `decision_correctness_status=not_assessed`, not a validated incident. |
 | **3. Directional pattern** — multiple *validated* high-leverage incidents point one way | **Not established.** No incident in this match currently has `video_reviewed` or `officially_confirmed` status; the primary counterfactual pipeline (§7.4) correctly reports "pending" for all of them. |
 | **4. Intentional manipulation** | **Not assessable from this analysis at all**, and this report makes no such claim. |
@@ -207,7 +248,8 @@ Following `Project.md` §9's four-tier interpretation ladder:
 | Pre-match team strength (historical) | JGravier soccer-elo (eloratings.net compilation), pinned commit `a24d031` | — | 1928/1928 team-match pairs resolved |
 | Pre-match team strength (focal, 2026) | international-football.net Elo table, as of 2026-07-06 | — | Argentina 2151, Egypt 1747 |
 | 2026 penalty data | FIFA PMSR, all 96 2026 matches through Round of 16 | A | Full census |
+| Broader baseline (club + non-WC international) | StatsBomb Open Data, pinned commit `b0bc9f22` | — | 2,379 matches: 2,193 club (UCL, big-five European leagues, Copa del Rey, Europa League) + 186 international (Copa América 2024, UEFA Euro 2020/2024, AFCON 2023) |
 
-All numbers in this report are computed, not asserted — regenerate with `uv run --project . python -m research_etl run` then re-execute the notebook. Test suite: 37/37 passing. Notebook: executes top-to-bottom with zero errors. Data quality gate: zero errors, one expected warning (three incidents remain evidence-gated out of primary analysis, by design).
+All numbers in this report are computed, not asserted — regenerate with `uv run --project . python -m research_etl run` then re-execute the notebook. Test suite: 42/42 passing. Notebook: executes top-to-bottom with zero errors. Data quality gate: zero errors, one expected warning (three incidents remain evidence-gated out of primary analysis, by design).
 
 **Language discipline for any downstream article:** use "rare," "material sensitivity," "directional," and "consistent with" — never "proved bias," "proved corruption," or "proved rigging," per `Project.md` §9.
