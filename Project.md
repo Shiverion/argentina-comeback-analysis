@@ -214,15 +214,24 @@ The data contract is implemented by the local `research_etl` package. It preserv
 ```text
 FIFA performance summary + manual review inputs -> focal_events.csv + incidents.csv
 Fjelstul World Cup match, goal, and booking tables -> historical_match_events.csv + historical_snapshots.csv
+Pinned StatsBomb competition-season event cache -> statsbomb_historical_match_events.csv + statsbomb_historical_snapshots.csv + statsbomb_history_match_audit.csv
 Pre-match ratings or odds -> pre_match_strength.csv + model_frame.csv (only after complete coverage)
 ```
 
 Run the standard pipeline from the project root:
 
 ```powershell
-uv sync
+uv sync --extra notebook --extra test
 uv run --project . python -m research_etl run
 ```
+
+The broader baseline is rebuilt from its explicit 53-pair allowlist with:
+
+```powershell
+uv run --project . python -m research_etl run --with-statsbomb-history
+```
+
+Raw StatsBomb event JSON is a local cache and is ignored by Git; compact processed tables, the pinned source version, and the match-level score audit are retained. The broader sample is availability-selected and must not be described as every senior competition.
 
 The standard run derives complete historical strength from a pinned yearly Elo source. Reported incidents remain excluded from correctness-assessed analysis, but an explicitly conditional scenario-only lane may evaluate a documented timing grid without claiming that the alternate decision was correct.
 
@@ -285,6 +294,54 @@ For every probability estimate, show:
 - Strength-rating sensitivity across the chosen pre-match ratings.
 - A table of assumptions that would reverse the sign or practical magnitude of the estimate.
 
+### 7.6 Linked opportunity and match-state analysis
+
+The separate opportunity-adjusted lane may be linked to the Notebook 1 result
+estimand through a pre-decision temporal panel, but the source populations must
+remain separate. The bridge compares a state-only regulation-result model with
+spatial, possession, discipline, and opponent-opportunity extensions using
+complete-match out-of-fold splits. It reports log loss, multiclass Brier score,
+and accuracy for every competition tier.
+
+The linked penalty sensitivity changes only the pre-window goal difference by
+one goal. It estimates immediate score-state sensitivity if a penalty is scored
+for the team or for its opponent. It is not a decision-correctness judgment,
+does not model the full tactical effect of a penalty, and is not applied to the
+focal 2026 probability unless the same pre-window event covariates become
+available.
+
+Correlation inference uses a match-cluster bootstrap interval, a whole-match
+permutation p-value, and Benjamini-Hochberg correction across the registered
+correlation family. Statistical significance is interpreted as association
+under the declared design, never as proof of causality or officiating bias.
+
+### 7.7 Comeback path and path-dependent counterfactuals
+
+The clean-versus-penalty analysis is a separate event-availability lane. It
+uses strict pre-cutoff score states and counts StatsBomb penalty-shot events
+after the cutoff. It reports both `clean_strict` (no penalty attempt by either
+team) and `clean_outcome` (no penalty goal by either team). The focal match is
+stored as `dataset_role=focal_case` and never changes the historical
+denominator.
+
+The same eligible states are also followed without conditioning on a final
+win. The pipeline distinguishes a penalty goal while exactly two goals down,
+an equalizer scored by penalty, an equalizer scored from open play, and whether
+the trailing team ever took the lead. This makes the mechanism estimand
+separate from the comeback estimand.
+
+The sequence check separately scans all regulation-time matches for two
+same-team penalty-shot events within a rolling 10-minute interval. Results from
+that all-minute scan must not be described as evidence about every football
+match in history; the selected StatsBomb coverage is an availability sample.
+
+The Egypt 0-3 extension has two estimands. The fixed-score branch changes only
+the score state in grouped out-of-fold bridge predictions. The adaptive branch
+reports real historical three-goal-deficit support and Wilson bounds, but does
+not pretend to simulate a tactical response that cannot be identified from one
+focal match. Both branches are sensitivity analyses, not decision-correctness
+findings.
+
 ---
 
 ## 8. Bias Controls and Review Protocol
@@ -293,7 +350,7 @@ For every probability estimate, show:
 | --- | --- |
 | Fan or narrative bias | Blind initial incident coding where feasible; separate source collection from decision assessment. |
 | Outcome bias | Include validated high-leverage incidents that could favor either team. |
-| Selective time windows | Lock 70, 75, 78, and 80 minutes before seeing historical results. |
+| Selective time windows | Lock 70, 75, 78, 79, and 80 minutes before seeing historical results. |
 | Data availability bias | State missing referee audio, VAR communication, and unavailable event detail as limitations. |
 | Model shopping | Define a baseline, secondary model, metrics, and validation split before evaluating the focal match. |
 | False precision | Report intervals, denominators, calibration, and sensitivity rather than a single deterministic percentage. |
@@ -328,7 +385,9 @@ The companion notebook will contain:
 7. Observed-state probability curve.
 8. Incident ledger with evidence statuses.
 9. Single and joint counterfactual simulations with sensitivity analysis.
-10. Interpretation template and limitations.
+10. Opportunity-adjusted temporal hazard and formal correlation inference.
+11. Linked state/opportunity bridge model and penalty score-state sensitivity.
+12. Interpretation template and limitations.
 
 The notebook is executable without external data: it validates the built-in focal record and reports which data-dependent steps remain pending. Once inputs are supplied, it should run top-to-bottom from a clean kernel.
 
@@ -344,6 +403,8 @@ The completed analysis must include:
 - Held-out calibration diagnostics for every win-probability model used in conclusions.
 - An incident ledger that distinguishes reported claims from validated alternatives.
 - Counterfactual results with scenario definitions, uncertainty, and sensitivity checks.
+- Formal correlation tests with match-cluster uncertainty and multiple-testing correction.
+- A non-pooled Notebook 1 bridge model with out-of-fold robustness comparisons and explicit penalty score-state scenarios.
 - A conclusion that states the level of evidence actually reached and the evidence that remains unavailable.
 
 The analysis is ready for substantive interpretation only when all material incidents have evidence statuses, historical sample coverage is documented, and the probability model passes its validation checks.

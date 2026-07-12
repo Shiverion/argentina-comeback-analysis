@@ -1,0 +1,58 @@
+{
+  "artifacts": [
+    {
+      "path": "results/comeback_path_cases.csv",
+      "rows": 3927,
+      "sha256": "29b944050a625810b48412a2beb6f4225a9656424fff168614c47791d2eaf426"
+    },
+    {
+      "path": "results/comeback_path_summary.csv",
+      "rows": 150,
+      "sha256": "c13336be4e979d49ba427f3733844ebd43ba8e6518fb3e59f95114fe8325c9e8"
+    },
+    {
+      "path": "results/penalty_sequence_cases.csv",
+      "rows": 2379,
+      "sha256": "7c23932ff648f99d9e854fad4c1e00b6b69a571b675164c91e64176bbb2b3601"
+    },
+    {
+      "path": "results/penalty_sequence_summary.csv",
+      "rows": 2,
+      "sha256": "58d2f7f33cf7958d2282c96ef21f5f44891cfe260a278cd6a14cf336d996b148"
+    }
+  ],
+  "created_at": "2026-07-12T22:21:21+00:00",
+  "cutoffs": [
+    70,
+    75,
+    78,
+    79,
+    80
+  ],
+  "definitions": {
+    "clean_outcome": "A comeback with no penalty-goal event by either team from the cutoff onward.",
+    "clean_strict": "A comeback with no penalty-shot event by either team from the cutoff onward.",
+    "eligible": "A team is two or more goals down strictly before the cutoff.",
+    "full_match_sequence": "A separate scan of all regulation-time events in all 2,379 selected matches; it is not conditioned on a two-goal deficit.",
+    "penalty_assisted_by_own_goal": "A comeback where the focal team scored at least one penalty after the cutoff.",
+    "penalty_assisted_by_own_shot": "A comeback where the focal team attempted at least one penalty after the cutoff.",
+    "team_states_equalizing_by_open_play": "All eligible states that reached level after the cutoff without the equalizing goal being a penalty.",
+    "team_states_equalizing_by_own_penalty": "All eligible states where a trailing team's penalty goal changed the live state from one goal down to level; final comeback is not required.",
+    "team_states_with_own_penalty_goal_while_two_down": "All eligible states where the trailing team scored a penalty while the live deficit was exactly two goals; final comeback is not required.",
+    "team_states_with_two_own_penalty_goals_within_10m": "All eligible states where the trailing team scored two penalty goals within a rolling 10-minute interval after the cutoff.",
+    "team_states_with_two_own_penalty_shots_within_10m": "All eligible states where the trailing team had two or more penalty-shot events within a rolling 10-minute interval after the cutoff.",
+    "three_plus": "A comeback where the focal team attempted at least three penalties after the cutoff."
+  },
+  "focal_case_is_excluded_from_denominators": true,
+  "historical_matches_scanned": 2379,
+  "historical_team_state_rows": 3922,
+  "limitations": [
+    "StatsBomb event coverage is an explicit availability sample, not all football history.",
+    "Penalty-shot events are an event-feed proxy and do not adjudicate whether an award was correct.",
+    "The focal match is kept as a labeled case because it is not part of the historical benchmark source.",
+    "At 79:00 Argentina was already 1-2 after Romero's 78th-minute goal; the 79-minute benchmark is not a claim that the focal state was still 0-2."
+  ],
+  "pipeline": "research_etl.comeback_paths",
+  "primary_cutoff_minute": 79,
+  "status": "ready"
+}

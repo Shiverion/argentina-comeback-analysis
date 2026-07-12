@@ -1,0 +1,147 @@
+{
+  "artifacts": [
+    {
+      "path": "results/temporal_statsbomb_world_cup_oof_predictions.csv",
+      "rows": 7372,
+      "sha256": "63c8584348a59a2bb311dbea123d1efbdf93e792f2c4e085f1d11776e1b621bb"
+    },
+    {
+      "path": "results/temporal_statsbomb_world_cup_coefficients.csv",
+      "rows": 14,
+      "sha256": "c990891bda453af23e276a14f903fb91fb3da033ae77127bfacb1b14c2f48e0d"
+    },
+    {
+      "path": "results/temporal_statsbomb_club_oof_predictions.csv",
+      "rows": 123444,
+      "sha256": "b060eee80771c01b6a4b15cfb65fe60cd47e6886039dcd45d9686c14f87c464e"
+    },
+    {
+      "path": "results/temporal_statsbomb_club_coefficients.csv",
+      "rows": 14,
+      "sha256": "2b44f2f2a44c1e2526495ead79955470b68b700ba9cc86e53d28d1598110556b"
+    },
+    {
+      "path": "results/temporal_statsbomb_intl_oof_predictions.csv",
+      "rows": 10652,
+      "sha256": "f20c31af6e425359df7d382b81d6808eab8264289d4fc6b30d414fdc14e09863"
+    },
+    {
+      "path": "results/temporal_statsbomb_intl_coefficients.csv",
+      "rows": 14,
+      "sha256": "fcb2e9c9940c9577011b3943721366c6aaeae759ce64243bac6ef961af6bd31e"
+    },
+    {
+      "path": "results/assets/11_temporal_club_penalty_hazard.png",
+      "sha256": "7caef975e5d9972b42cd3e800df9de6c0c50a85a4298d50d11181231889d0398"
+    }
+  ],
+  "created_at": "2026-07-12T20:41:13+00:00",
+  "interpretation": "Grouped out-of-fold association model. Features use only events before each five-minute window; penalty_shots is a StatsBomb event proxy and is not an adjudication of penalty correctness or intent.",
+  "models": [
+    {
+      "alternate_penalty_foul_events": 37,
+      "alternate_penalty_foul_windows": 37,
+      "features": [
+        "time_bin_start_minute",
+        "goal_diff_pre",
+        "red_cards_for_pre",
+        "red_cards_against_pre",
+        "box_entries_prev_5m",
+        "box_receipts_prev_5m",
+        "non_penalty_xg_prev_5m",
+        "final_third_entries_prev_5m",
+        "fouls_committed_prev_5m",
+        "fouls_suffered_prev_5m",
+        "yellow_cards_prev_5m",
+        "possession_sequences_prev_5m",
+        "opponent_box_entries_prev_5m",
+        "opponent_non_penalty_xg_prev_5m"
+      ],
+      "folds": 5,
+      "matches": 128,
+      "null_brier_score": 0.006736418746829598,
+      "null_log_loss": 0.040626847601746376,
+      "oof_beats_null": true,
+      "oof_brier_score": 0.006757562629194049,
+      "oof_log_loss": 0.0400253727203775,
+      "outcome": "penalty_event_next_5m",
+      "panel": "statsbomb_world_cup",
+      "positive_events": 50,
+      "positive_rate": 0.006782419967444384,
+      "positive_windows": 50,
+      "rows": 7372,
+      "tier": "world_cup"
+    },
+    {
+      "alternate_penalty_foul_events": 495,
+      "alternate_penalty_foul_windows": 495,
+      "features": [
+        "time_bin_start_minute",
+        "goal_diff_pre",
+        "red_cards_for_pre",
+        "red_cards_against_pre",
+        "box_entries_prev_5m",
+        "box_receipts_prev_5m",
+        "non_penalty_xg_prev_5m",
+        "final_third_entries_prev_5m",
+        "fouls_committed_prev_5m",
+        "fouls_suffered_prev_5m",
+        "yellow_cards_prev_5m",
+        "possession_sequences_prev_5m",
+        "opponent_box_entries_prev_5m",
+        "opponent_non_penalty_xg_prev_5m"
+      ],
+      "folds": 5,
+      "matches": 2193,
+      "null_brier_score": 0.004860944735606892,
+      "null_log_loss": 0.030867965398325238,
+      "oof_beats_null": true,
+      "oof_brier_score": 0.004846831249254427,
+      "oof_log_loss": 0.029384731649449974,
+      "outcome": "penalty_event_next_5m",
+      "panel": "statsbomb_history",
+      "positive_events": 604,
+      "positive_rate": 0.004884806065908428,
+      "positive_windows": 603,
+      "rows": 123444,
+      "tier": "club"
+    },
+    {
+      "alternate_penalty_foul_events": 43,
+      "alternate_penalty_foul_windows": 43,
+      "features": [
+        "time_bin_start_minute",
+        "goal_diff_pre",
+        "red_cards_for_pre",
+        "red_cards_against_pre",
+        "box_entries_prev_5m",
+        "box_receipts_prev_5m",
+        "non_penalty_xg_prev_5m",
+        "final_third_entries_prev_5m",
+        "fouls_committed_prev_5m",
+        "fouls_suffered_prev_5m",
+        "yellow_cards_prev_5m",
+        "possession_sequences_prev_5m",
+        "opponent_box_entries_prev_5m",
+        "opponent_non_penalty_xg_prev_5m"
+      ],
+      "folds": 5,
+      "matches": 186,
+      "null_brier_score": 0.005508186904759723,
+      "null_log_loss": 0.034303254376451424,
+      "oof_beats_null": true,
+      "oof_brier_score": 0.0055053326710240115,
+      "oof_log_loss": 0.032763853456637154,
+      "outcome": "penalty_event_next_5m",
+      "panel": "statsbomb_history",
+      "positive_events": 59,
+      "positive_rate": 0.0055388659406684195,
+      "positive_windows": 59,
+      "rows": 10652,
+      "tier": "intl"
+    }
+  ],
+  "non_pooling_rule": "World Cup, selected club, and selected non-World-Cup international panels remain separate.",
+  "pipeline": "research_etl.temporal_analysis",
+  "status": "ready"
+}

@@ -39,9 +39,24 @@
       "filename": "model_frame.csv",
       "rows": 173520,
       "sha256": "57abf21793113865fd385b0a68197fecd0c9b8019a2bac2c6cc7464f17f2325d"
+    },
+    {
+      "filename": "statsbomb_historical_match_events.csv",
+      "rows": 7288,
+      "sha256": "76a7c9d7a686bdfeb1876db6350a1647fd53c03655f3db30c00ef603ac7b1972"
+    },
+    {
+      "filename": "statsbomb_historical_snapshots.csv",
+      "rows": 9516,
+      "sha256": "9995939f8e4e0eabe12b7873c1981087939877d94145b3f4779435f8ff1cd62f"
+    },
+    {
+      "filename": "statsbomb_history_match_audit.csv",
+      "rows": 2379,
+      "sha256": "b6218b94b5b4f3062cb626e0ad8d27320703da68e95af469115ce7304b14f53d"
     }
   ],
-  "created_at": "2026-07-10T23:58:27+00:00",
+  "created_at": "2026-07-11T08:50:01+00:00",
   "model_status": {
     "matches": 964,
     "rows": 173520,
@@ -51,5 +66,28 @@
     "historical_coverage": "Fjelstul World Cup Database covers men's World Cups through 2022; 2026 focal data is held separately.",
     "historical_timeline_resolution": "Minute-resolution goals and bookings are placed at the end of their recorded minute."
   },
-  "pipeline": "research_etl.transform"
+  "pipeline": "research_etl.transform",
+  "statsbomb_history": {
+    "artifacts": [
+      {
+        "filename": "statsbomb_historical_match_events.csv",
+        "rows": 7288,
+        "sha256": "76a7c9d7a686bdfeb1876db6350a1647fd53c03655f3db30c00ef603ac7b1972"
+      },
+      {
+        "filename": "statsbomb_historical_snapshots.csv",
+        "rows": 9516,
+        "sha256": "9995939f8e4e0eabe12b7873c1981087939877d94145b3f4779435f8ff1cd62f"
+      },
+      {
+        "filename": "statsbomb_history_match_audit.csv",
+        "rows": 2379,
+        "sha256": "b6218b94b5b4f3062cb626e0ad8d27320703da68e95af469115ce7304b14f53d"
+      }
+    ],
+    "matches": 2379,
+    "pinned_commit": "b0bc9f22dd77c206ddedc1d742893b3bbe64baec",
+    "source_id": "statsbomb_open_data_history",
+    "status": "preserved"
+  }
 }

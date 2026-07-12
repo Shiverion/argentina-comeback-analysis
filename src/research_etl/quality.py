@@ -17,7 +17,10 @@ from research_etl.contracts import (
 )
 from research_etl.paths import ProjectPaths
 from research_etl.pmsr import PMSR_TEAM_COLUMNS
-from research_etl.sources import write_json_atomic
+from research_etl.pmsr_stats import PMSR_MATCH_FEATURE_COLUMNS
+from research_etl.opportunity import STATSBOMB_OPPORTUNITY_COLUMNS
+from research_etl.temporal import TEMPORAL_COLUMNS
+from research_etl.sources import load_config, write_json_atomic
 
 
 @dataclass
@@ -309,6 +312,260 @@ def _validate_focal_strength(paths: ProjectPaths, report: QualityReport) -> None
         )
 
 
+def _validate_statsbomb_history(paths: ProjectPaths, report: QualityReport) -> None:
+    expected_files = [
+        "statsbomb_historical_match_events.csv",
+        "statsbomb_historical_snapshots.csv",
+        "statsbomb_history_match_audit.csv",
+    ]
+    if not any((paths.processed_dir / filename).exists() for filename in expected_files):
+        return
+    config = load_config(paths)["statsbomb_history"]
+    configured_pairs = [
+        (int(pair["competition_id"]), int(pair["season_id"])) for pair in config["pairs"]
+    ]
+    if len(configured_pairs) != int(config["competition_count"]) or len(set(configured_pairs)) != len(configured_pairs):
+        report.add(
+            "error", "STATSBOMB_PAIR_ALLOWLIST", "StatsBomb competition-season allowlist must be unique and match its declared count.",
+            declared=int(config["competition_count"]), actual=len(configured_pairs),
+        )
+    event_required = {
+        "match_id", "event_id", "period", "elapsed_seconds", "home_team", "away_team",
+        "event_team", "event_type", "home_score", "away_score", "source_version", "competition_tier",
+    }
+    snapshot_required = {
+        "match_id", "threshold_minute", "goal_difference", "regulation_result", "competition_tier",
+    }
+    audit_required = {
+        "match_id", "competition_id", "season_id", "competition_tier", "metadata_home_score",
+        "metadata_away_score", "regulation_home_score", "regulation_away_score", "has_extra_periods",
+        "timeline_event_count", "source_version",
+    }
+    events = _read_processed(paths, "statsbomb_historical_match_events.csv", event_required, report)
+    snapshots = _read_processed(paths, "statsbomb_historical_snapshots.csv", snapshot_required, report)
+    audit = _read_processed(paths, "statsbomb_history_match_audit.csv", audit_required, report)
+    if events is None or snapshots is None or audit is None:
+        return
+
+    expected_matches = int(config["expected_match_count"])
+    expected_by_tier = {str(key): int(value) for key, value in config["expected_matches_by_tier"].items()}
+    snapshot_matches = set(snapshots["match_id"].astype(str))
+    audit_matches = set(audit["match_id"].astype(str))
+    if len(snapshot_matches) != expected_matches:
+        report.add(
+            "error", "STATSBOMB_MATCH_COUNT", "StatsBomb history match count disagrees with the pinned census.",
+            expected=expected_matches, actual=len(snapshot_matches),
+        )
+    if audit_matches != snapshot_matches:
+        report.add(
+            "error", "STATSBOMB_AUDIT_COVERAGE", "StatsBomb audit and snapshot match IDs must be identical.",
+            audit_only=sorted(audit_matches - snapshot_matches)[:10],
+            snapshot_only=sorted(snapshot_matches - audit_matches)[:10],
+        )
+    if snapshots.duplicated(["match_id", "threshold_minute"]).any():
+        report.add("error", "STATSBOMB_DUPLICATE_SNAPSHOT", "StatsBomb snapshots must be unique by match and threshold.")
+    expected_thresholds = {int(value) for value in config["threshold_minutes"]}
+    threshold_values = set(pd.to_numeric(snapshots["threshold_minute"], errors="coerce").dropna().astype(int))
+    if threshold_values != expected_thresholds:
+        report.add(
+            "error", "STATSBOMB_THRESHOLD_COVERAGE", "StatsBomb snapshots do not cover exactly the configured thresholds.",
+            expected=sorted(expected_thresholds), actual=sorted(threshold_values),
+        )
+    per_match_thresholds = snapshots.groupby("match_id")["threshold_minute"].nunique()
+    if (per_match_thresholds != len(expected_thresholds)).any():
+        report.add(
+            "error", "STATSBOMB_INCOMPLETE_SNAPSHOTS", "Every StatsBomb match must have one row per configured threshold.",
+            incomplete_matches=int((per_match_thresholds != len(expected_thresholds)).sum()),
+        )
+
+    tier_counts = snapshots.drop_duplicates("match_id")["competition_tier"].value_counts().to_dict()
+    report.metrics["statsbomb_history.matches_by_tier"] = {str(key): int(value) for key, value in tier_counts.items()}
+    if tier_counts != expected_by_tier:
+        report.add(
+            "error", "STATSBOMB_TIER_CENSUS", "StatsBomb tier counts disagree with the configured census.",
+            expected=expected_by_tier, actual={str(key): int(value) for key, value in tier_counts.items()},
+        )
+    invalid_tiers = sorted(set(snapshots["competition_tier"].dropna()) - set(expected_by_tier))
+    if invalid_tiers:
+        report.add("error", "STATSBOMB_INVALID_TIER", "StatsBomb rows contain an unknown competition tier.", values=invalid_tiers)
+
+    source_version = str(config["pinned_commit"])
+    event_versions = set(events["source_version"].dropna().astype(str))
+    snapshot_versions = set(snapshots.get("source_version", pd.Series(dtype=str)).dropna().astype(str))
+    if event_versions != {source_version} or snapshot_versions not in ({source_version}, set()):
+        report.add(
+            "error", "STATSBOMB_SOURCE_VERSION", "StatsBomb artifacts must carry the configured pinned commit.",
+            expected=source_version, event_versions=sorted(event_versions), snapshot_versions=sorted(snapshot_versions),
+        )
+    invalid_periods = sorted(set(pd.to_numeric(events["period"], errors="coerce").dropna().astype(int)) - {1, 2})
+    if invalid_periods:
+        report.add("error", "STATSBOMB_NON_REGULATION_EVENT", "StatsBomb event output contains non-regulation periods.", periods=invalid_periods)
+    if events.duplicated(["match_id", "event_id"]).any():
+        report.add("error", "STATSBOMB_DUPLICATE_EVENT", "StatsBomb event IDs must be unique within a match.")
+
+    numeric_audit = audit[
+        ["metadata_home_score", "metadata_away_score", "regulation_home_score", "regulation_away_score"]
+    ].apply(pd.to_numeric, errors="coerce")
+    if numeric_audit.isna().any().any() or (numeric_audit < 0).any().any():
+        report.add("error", "STATSBOMB_INVALID_AUDIT_SCORE", "StatsBomb audit scores must be non-negative numeric values.")
+    mismatches = audit.loc[
+        (numeric_audit["metadata_home_score"] != numeric_audit["regulation_home_score"])
+        | (numeric_audit["metadata_away_score"] != numeric_audit["regulation_away_score"])
+    ]
+    extra_periods = mismatches["has_extra_periods"].astype(str).str.strip().str.lower().isin({"1", "true", "t", "yes", "y"})
+    if (~extra_periods).any():
+        report.add(
+            "error", "STATSBOMB_REGULATION_SCORE_MISMATCH", "A non-extra-time StatsBomb match does not reconcile to metadata full time.",
+            matches=mismatches.loc[~extra_periods, "match_id"].astype(str).tolist()[:20],
+            mismatch_count=int((~extra_periods).sum()),
+        )
+    report.metrics["statsbomb_history.score_mismatches_allowed_extra_time"] = int(len(mismatches))
+    report.metrics["statsbomb_history.unmapped_relevant_events"] = 0
+
+
+def _validate_opportunity_features(paths: ProjectPaths, report: QualityReport) -> None:
+    """Check the optional panels at their intended team-match grain."""
+
+    def validate_statsbomb_panel(filename: str, expected_tiers: set[str]) -> None:
+        path = paths.processed_dir / filename
+        if not path.exists():
+            return
+        frame = _read_processed(paths, filename, STATSBOMB_OPPORTUNITY_COLUMNS, report)
+        if frame is None:
+            return
+        if frame.duplicated(["match_id", "team_name"]).any():
+            report.add("error", "OPPORTUNITY_DUPLICATE_TEAM_MATCH", f"{filename} has duplicate team-match rows.")
+        per_match = frame.groupby("match_id")["team_name"].nunique()
+        if (per_match != 2).any():
+            report.add(
+                "error", "OPPORTUNITY_INCOMPLETE_MATCH", f"{filename} must contain exactly two teams per match.",
+                incomplete_matches=int((per_match != 2).sum()),
+            )
+        numeric = [
+            "penalty_fouls_won", "penalty_shots", "fouls_committed", "fouls_suffered", "yellow_cards",
+            "second_yellows", "send_offs", "box_entries", "box_receipts", "shots_in_box",
+            "non_penalty_shots_in_box", "non_penalty_xg", "final_third_entries", "possession_sequences",
+            "possession_sequence_share",
+        ]
+        values = frame[numeric].apply(pd.to_numeric, errors="coerce")
+        if values.isna().any().any() or (values < 0).any().any():
+            report.add("error", "OPPORTUNITY_INVALID_NUMERIC", f"{filename} has missing or negative feature values.")
+        if (values["penalty_fouls_won"] > values["fouls_suffered"]).any():
+            report.add("error", "OPPORTUNITY_PENALTY_FOUL_MISMATCH", f"{filename} has more penalty fouls won than fouls suffered.")
+        if (values["non_penalty_shots_in_box"] > values["shots_in_box"]).any():
+            report.add("error", "OPPORTUNITY_SHOT_MISMATCH", f"{filename} has more non-penalty box shots than box shots.")
+        shares = frame.groupby("match_id")["possession_sequence_share"].sum()
+        active = frame.groupby("match_id")["possession_sequences"].sum().gt(0)
+        if not shares.loc[active].between(0.999, 1.001).all():
+            report.add("error", "OPPORTUNITY_SEQUENCE_SHARE", f"{filename} possession-sequence shares must sum to one per match.")
+        tiers = set(frame["competition_tier"].dropna())
+        if tiers != expected_tiers:
+            report.add(
+                "error", "OPPORTUNITY_TIER_MISMATCH", f"{filename} has unexpected competition tiers.",
+                expected=sorted(expected_tiers), actual=sorted(tiers),
+            )
+        report.metrics[f"{filename}.matches"] = int(frame["match_id"].nunique())
+        report.metrics[f"{filename}.rows"] = int(len(frame))
+
+    validate_statsbomb_panel("statsbomb_world_cup_opportunity_features.csv", {"world_cup"})
+    validate_statsbomb_panel("statsbomb_history_opportunity_features.csv", {"club", "intl"})
+
+    history_feature_path = paths.processed_dir / "statsbomb_history_opportunity_features.csv"
+    history_audit_path = paths.processed_dir / "statsbomb_history_match_audit.csv"
+    if history_feature_path.exists() and history_audit_path.exists():
+        feature_matches = set(pd.read_csv(history_feature_path)["match_id"].astype(str))
+        audited_matches = set(pd.read_csv(history_audit_path)["match_id"].astype(str))
+        if feature_matches != audited_matches:
+            report.add(
+                "error", "OPPORTUNITY_HISTORY_AUDIT_COVERAGE",
+                "StatsBomb opportunity features must cover exactly the existing audited history census.",
+                feature_only=sorted(feature_matches - audited_matches)[:10],
+                audit_only=sorted(audited_matches - feature_matches)[:10],
+            )
+
+    pmsr_path = paths.processed_dir / "pmsr_2026_match_features.csv"
+    if not pmsr_path.exists():
+        return
+    pmsr = _read_processed(paths, "pmsr_2026_match_features.csv", PMSR_MATCH_FEATURE_COLUMNS, report)
+    if pmsr is None:
+        return
+    if pmsr.duplicated(["match_number", "team_name"]).any():
+        report.add("error", "PMSR_FEATURE_DUPLICATE_TEAM_MATCH", "PMSR features have duplicate team-match rows.")
+    if int(pmsr["match_number"].nunique()) != 96 or len(pmsr) != 192:
+        report.add(
+            "error", "PMSR_FEATURE_CENSUS", "PMSR feature panel must cover the 96-match, 192-team-match census.",
+            matches=int(pmsr["match_number"].nunique()), rows=int(len(pmsr)),
+        )
+    teams_per_match = pmsr.groupby("match_number")["team_name"].nunique()
+    if (teams_per_match != 2).any():
+        report.add("error", "PMSR_FEATURE_INCOMPLETE_MATCH", "PMSR feature rows must have two teams per match.")
+    numeric = [
+        "penalties_awarded", "goals", "team_possession_pct", "contested_possession_pct", "xg", "attempts_at_goal",
+        "shots_on_target", "total_passes", "completed_passes", "pass_completion_pct", "completed_line_breaks",
+        "defensive_line_breaks", "receptions_final_third", "crosses", "ball_progressions", "defensive_pressures",
+        "direct_pressures", "forced_turnovers", "second_balls",
+    ]
+    values = pmsr[numeric].apply(pd.to_numeric, errors="coerce")
+    if values.isna().any().any() or (values < 0).any().any():
+        report.add("error", "PMSR_FEATURE_INVALID_NUMERIC", "PMSR feature panel has missing or negative values.")
+    possession = pmsr.groupby("match_number").agg(
+        team_possession=("team_possession_pct", "sum"), contested=("contested_possession_pct", "first")
+    )
+    if not (possession["team_possession"] + possession["contested"]).between(99.8, 100.2).all():
+        report.add("error", "PMSR_FEATURE_POSSESSION_BALANCE", "PMSR team plus contested possession must sum to 100% per match.")
+    team_penalties_path = paths.processed_dir / "pmsr_2026_team_penalties.csv"
+    if team_penalties_path.exists():
+        expected = pd.read_csv(team_penalties_path).set_index("team_name")["penalties_awarded"].sort_index()
+        observed = pmsr.groupby("team_name")["penalties_awarded"].sum().sort_index()
+        if not expected.equals(observed):
+            report.add("error", "PMSR_FEATURE_PENALTY_RECONCILIATION", "PMSR feature penalties do not reconcile to the canonical team aggregate.")
+    report.metrics["pmsr_2026_match_features.csv.rows"] = int(len(pmsr))
+    report.metrics["pmsr_2026_match_features.csv.matches"] = int(pmsr["match_number"].nunique())
+
+
+def _validate_temporal_features(paths: ProjectPaths, report: QualityReport) -> None:
+    """Check temporal grain and invariants, including the pre-window outcome split."""
+
+    numeric = [column for column in TEMPORAL_COLUMNS if column not in {
+        "match_id", "team_id", "team_name", "opponent_team_id", "opponent_team_name", "home_or_away",
+        "tournament", "year", "stage", "competition_tier", "is_neutral", "referee_id", "referee_name",
+        "source_name", "source_version", "goal_diff_pre",
+    }]
+    for filename, expected_tiers in (
+        ("statsbomb_world_cup_temporal_features.csv", {"world_cup"}),
+        ("statsbomb_history_temporal_features.csv", {"club", "intl"}),
+    ):
+        path = paths.processed_dir / filename
+        if not path.exists():
+            continue
+        frame = _read_processed(paths, filename, TEMPORAL_COLUMNS, report)
+        if frame is None:
+            continue
+        if frame.duplicated(["match_id", "team_name", "time_bin_start_minute"]).any():
+            report.add("error", "TEMPORAL_DUPLICATE_TEAM_WINDOW", f"{filename} has duplicate team-window rows.")
+        per_window = frame.groupby(["match_id", "time_bin_start_minute"])["team_name"].nunique()
+        if (per_window != 2).any():
+            report.add("error", "TEMPORAL_INCOMPLETE_WINDOW", f"{filename} must contain two teams per match-window.")
+        values = frame[numeric].apply(pd.to_numeric, errors="coerce")
+        if values.isna().any().any() or (values < 0).any().any():
+            report.add("error", "TEMPORAL_INVALID_NUMERIC", f"{filename} has missing or negative values.")
+        if not (frame["goal_diff_pre"] == frame["goals_for_pre"] - frame["goals_against_pre"]).all():
+            report.add("error", "TEMPORAL_SCORE_STATE", f"{filename} has inconsistent pre-window score state.")
+        final_score_variation = frame.groupby("match_id")[["regulation_home_score", "regulation_away_score"]].nunique()
+        if (final_score_variation > 1).any().any():
+            report.add("error", "TEMPORAL_FINAL_SCORE_STATE", f"{filename} has inconsistent regulation final scores within a match.")
+        if (frame["penalty_event_next_5m"] != frame["penalty_shots_next_5m"].gt(0).astype(int)).any():
+            report.add("error", "TEMPORAL_PENALTY_LABEL", f"{filename} has inconsistent penalty-shot labels.")
+        if (frame["penalty_foul_event_next_5m"] != frame["penalty_fouls_won_next_5m"].gt(0).astype(int)).any():
+            report.add("error", "TEMPORAL_FOUL_LABEL", f"{filename} has inconsistent penalty-foul labels.")
+        tiers = set(frame["competition_tier"].dropna())
+        if tiers != expected_tiers:
+            report.add("error", "TEMPORAL_TIER_MISMATCH", f"{filename} has unexpected competition tiers.", expected=sorted(expected_tiers), actual=sorted(tiers))
+        report.metrics[f"{filename}.matches"] = int(frame["match_id"].nunique())
+        report.metrics[f"{filename}.rows"] = int(len(frame))
+        report.metrics[f"{filename}.positive_windows"] = int(frame["penalty_event_next_5m"].sum())
+
+
 def validate_processed(paths: ProjectPaths, *, write_report: bool = True) -> QualityReport:
     """Run stable quality checks over the ETL outputs before the notebook consumes them."""
 
@@ -326,6 +583,9 @@ def validate_processed(paths: ProjectPaths, *, write_report: bool = True) -> Qua
     _validate_strength(paths, report)
     _validate_pmsr(paths, report)
     _validate_focal_strength(paths, report)
+    _validate_statsbomb_history(paths, report)
+    _validate_opportunity_features(paths, report)
+    _validate_temporal_features(paths, report)
 
     if write_report:
         payload = report.to_dict()

@@ -10,11 +10,16 @@ from research_etl.analysis import (
     run_descriptive_sensitivity,
     run_scenario_only_analysis,
 )
+from research_etl.opportunity_analysis import run_opportunity_analysis
+from research_etl.bridge_analysis import run_bridge_analysis
+from research_etl.comeback_counterfactual import run_comeback_counterfactual
+from research_etl.comeback_paths import run_comeback_path_analysis
+from research_etl.temporal_analysis import run_temporal_analysis
 from research_etl.modeling import run_model_validation
 from research_etl.paths import ProjectPaths
 from research_etl.quality import validate_processed
 from research_etl.sources import SourceError, extract_sources, seed_manual_inputs
-from research_etl.transform import transform_sources
+from research_etl.transform import build_opportunity_artifacts, transform_sources
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -36,8 +41,57 @@ def _parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Also download individual StatsBomb event JSON files for the configured World Cup seasons.",
     )
+    extract.add_argument(
+        "--with-statsbomb-history",
+        action="store_true",
+        help="Download the configured broader-baseline StatsBomb match and event streams.",
+    )
 
-    subparsers.add_parser("transform", help="Normalize raw data into notebook-ready processed artifacts.")
+    transform = subparsers.add_parser("transform", help="Normalize raw data into notebook-ready processed artifacts.")
+    transform.add_argument(
+        "--with-statsbomb-history",
+        action="store_true",
+        help="Rebuild broader-baseline processed artifacts from the cached StatsBomb event streams.",
+    )
+    opportunity = subparsers.add_parser(
+        "opportunity",
+        help="Build feature panels for the separate opportunity-adjusted officiating analysis.",
+    )
+    opportunity.add_argument(
+        "--with-statsbomb-world-cup",
+        action="store_true",
+        help="Download configured 2018/2022 World Cup event feeds and build their feature panel.",
+    )
+    opportunity.add_argument(
+        "--with-statsbomb-history",
+        action="store_true",
+        help="Download the selected broader StatsBomb event cache and build separate club/international panels.",
+    )
+    opportunity.add_argument(
+        "--with-pmsr-2026",
+        action="store_true",
+        help="Fetch all official 2026 PMSR summaries in memory and build the 96-match feature panel.",
+    )
+    opportunity.add_argument(
+        "--with-statsbomb-temporal",
+        action="store_true",
+        help="Build pre-decision five-minute StatsBomb panels and grouped hazard outputs.",
+    )
+    opportunity.add_argument("--all", action="store_true", help="Build every configured opportunity feature panel.")
+    comeback = subparsers.add_parser(
+        "comeback-path",
+        help="Classify clean and penalty-assisted late comebacks from the cached StatsBomb history.",
+    )
+    comeback.add_argument(
+        "--with-statsbomb-history",
+        action="store_true",
+        help="Download the configured broader StatsBomb event cache before scanning it.",
+    )
+    comeback.add_argument(
+        "--with-counterfactual",
+        action="store_true",
+        help="Also build the fixed-score and adaptive-support Egypt counterfactual outputs.",
+    )
     subparsers.add_parser("validate", help="Run automated quality gates over processed artifacts.")
     subparsers.add_parser("analyze", help="Run configured scenario-only conditional analyses.")
 
@@ -48,6 +102,11 @@ def _parser() -> argparse.ArgumentParser:
         "--with-statsbomb-events",
         action="store_true",
         help="Also download individual StatsBomb event JSON files for the configured World Cup seasons.",
+    )
+    run.add_argument(
+        "--with-statsbomb-history",
+        action="store_true",
+        help="Download and rebuild the configured broader-baseline StatsBomb artifacts.",
     )
     subparsers.add_parser("status", help="Show the most recent ETL and model-readiness state.")
     return parser
@@ -88,13 +147,76 @@ def main(argv: Sequence[str] | None = None) -> int:
                 paths,
                 include_statsbomb=args.with_statsbomb,
                 include_statsbomb_events=args.with_statsbomb_events,
+                include_statsbomb_history=args.with_statsbomb_history,
                 force_download=args.force,
             )
             _print_json({"status": "extracted", "source_files": len(records), "records": records})
             return 0
 
         if args.command == "transform":
-            _print_json(transform_sources(paths))
+            _print_json(transform_sources(paths, rebuild_statsbomb_history=args.with_statsbomb_history))
+            return 0
+
+        if args.command == "opportunity":
+            build_world_features = bool(args.with_statsbomb_world_cup or args.all)
+            build_history_features = bool(args.with_statsbomb_history or args.all)
+            include_world_cup = build_world_features
+            include_history = build_history_features
+            include_pmsr = bool(args.with_pmsr_2026 or args.all)
+            include_temporal = bool(args.with_statsbomb_temporal or args.all)
+            if not any((include_world_cup, include_history, include_pmsr, include_temporal)):
+                parser.error("opportunity requires at least one source flag or --all.")
+            if include_temporal:
+                include_world_cup = True
+                include_history = True
+            source_records = []
+            if include_world_cup or include_history:
+                source_records = extract_sources(
+                    paths,
+                    include_statsbomb=include_world_cup,
+                    include_statsbomb_events=include_world_cup,
+                    include_statsbomb_history=include_history,
+                )
+            manifest = build_opportunity_artifacts(
+                paths,
+                build_statsbomb_world_cup=build_world_features,
+                build_statsbomb_history=build_history_features,
+                build_pmsr_2026=include_pmsr,
+                build_statsbomb_temporal=include_temporal,
+            )
+            analysis_manifest = run_opportunity_analysis(paths) if any((build_world_features, build_history_features, include_pmsr)) else None
+            temporal_manifest = run_temporal_analysis(paths) if include_temporal else None
+            bridge_manifest = run_bridge_analysis(paths) if include_temporal else None
+            path_manifest = run_comeback_path_analysis(paths) if include_history else None
+            dynamic_manifest = run_comeback_counterfactual(paths) if include_temporal else None
+            status = _validate_or_return(paths)
+            _print_json(
+                {
+                    "source_files": len(source_records),
+                    "opportunity_manifest": manifest,
+                    "analysis_manifest": analysis_manifest,
+                    "temporal_manifest": temporal_manifest,
+                    "bridge_manifest": bridge_manifest,
+                    "comeback_path_manifest": path_manifest,
+                    "comeback_counterfactual_manifest": dynamic_manifest,
+                    "exit_code": status,
+                }
+            )
+            return status
+
+        if args.command == "comeback-path":
+            source_records = []
+            if args.with_statsbomb_history:
+                source_records = extract_sources(paths, include_statsbomb_history=True)
+            path_manifest = run_comeback_path_analysis(paths)
+            dynamic_manifest = run_comeback_counterfactual(paths) if args.with_counterfactual else None
+            _print_json(
+                {
+                    "source_files": len(source_records),
+                    "comeback_path_manifest": path_manifest,
+                    "comeback_counterfactual_manifest": dynamic_manifest,
+                }
+            )
             return 0
 
         if args.command == "validate":
@@ -116,9 +238,10 @@ def main(argv: Sequence[str] | None = None) -> int:
                 paths,
                 include_statsbomb=args.with_statsbomb,
                 include_statsbomb_events=args.with_statsbomb_events,
+                include_statsbomb_history=args.with_statsbomb_history,
                 force_download=args.force,
             )
-            manifest = transform_sources(paths)
+            manifest = transform_sources(paths, rebuild_statsbomb_history=args.with_statsbomb_history)
             status = _validate_or_return(paths)
             analysis_manifest = (
                 {

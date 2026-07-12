@@ -1,5 +1,5 @@
 {
-  "created_at": "2026-07-10T23:59:51+00:00",
+  "created_at": "2026-07-11T09:02:17+00:00",
   "decision_correctness_status": "not_assessed",
   "output": "results/scenario_only_counterfactual.csv",
   "pipeline": "research_etl.analysis.scenario_only",

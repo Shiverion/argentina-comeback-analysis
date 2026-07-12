@@ -1,8 +1,12 @@
 from __future__ import annotations
 
+import json
+import tempfile
+from pathlib import Path
+
 import pandas as pd
 
-from research_etl.statsbomb_history import build_snapshots, extract_match_timeline
+from research_etl.statsbomb_history import build_history_from_raw, build_snapshots, extract_match_timeline
 
 
 def _match_meta(match_id, home, away, date="2020-06-01", stage="Group Stage"):
@@ -78,6 +82,31 @@ def test_extract_match_timeline_reconstructs_scoreline():
     assert rows[0]["elapsed_seconds"] == 600
     assert all(r["competition_tier"] == "club" for r in rows)
     assert all(r["is_neutral"] is False for r in rows)
+
+
+def test_extract_match_timeline_uses_team_id_when_display_names_differ():
+    meta = _match_meta("M_ALIAS", "Home FC", "Olympique de Marseille")
+    meta["home_team"]["home_team_id"] = 10
+    meta["away_team"]["away_team_id"] = 20
+    event = _shot_goal("Marseille", 45, event_id="alias-goal")
+    event["team"]["id"] = 20
+
+    rows = extract_match_timeline(meta, [event], tournament="Test League", tier="club")
+
+    assert rows[0]["event_team"] == "Olympique de Marseille"
+    assert rows[0]["away_score"] == 1
+
+
+def test_extract_match_timeline_fails_on_unmapped_relevant_event():
+    meta = _match_meta("M_UNKNOWN", "Home FC", "Away FC")
+    event = _shot_goal("Unlisted FC", 45, event_id="unknown-goal")
+
+    try:
+        extract_match_timeline(meta, [event], tournament="Test League", tier="club")
+    except ValueError as error:
+        assert "Could not map relevant event" in str(error)
+    else:
+        raise AssertionError("An unmapped goal must fail fast instead of being dropped.")
 
 
 def test_extract_match_timeline_counts_red_and_second_yellow():
@@ -159,3 +188,43 @@ def test_build_snapshots_no_events_is_scoreless_draw():
     row = snapshots.iloc[0]
     assert row.regulation_result == "NOT_TRAILING"
     assert row.goal_difference == 0
+
+
+def test_build_history_from_raw_writes_pinned_version_and_score_audit():
+    with tempfile.TemporaryDirectory() as temporary_directory:
+        raw = Path(temporary_directory)
+        (raw / "matches" / "9").mkdir(parents=True)
+        (raw / "events").mkdir()
+        match = {
+            "match_id": 100,
+            "match_date": "2024-01-01",
+            "home_score": 0,
+            "away_score": 1,
+            "home_team": {"home_team_id": 1, "home_team_name": "Home FC"},
+            "away_team": {"away_team_id": 2, "away_team_name": "Olympique de Marseille"},
+            "competition_stage": {"name": "Regular Season"},
+        }
+        (raw / "matches" / "9" / "1.json").write_text(json.dumps([match]), encoding="utf-8")
+        event = _shot_goal("Marseille", 45, event_id="alias-goal")
+        event["team"]["id"] = 2
+        (raw / "events" / "100.json").write_text(json.dumps([event]), encoding="utf-8")
+
+        events, snapshots, audit = build_history_from_raw(
+            raw,
+            pairs=[
+                {
+                    "competition_id": 9,
+                    "season_id": 1,
+                    "competition_name": "Test League",
+                    "season_name": "2024",
+                    "tier": "club",
+                }
+            ],
+            thresholds=[70],
+            source_version="abc123",
+        )
+
+        assert events.iloc[-1]["event_team"] == "Olympique de Marseille"
+        assert events.iloc[-1]["source_version"] == "abc123"
+        assert snapshots.iloc[0]["regulation_result"] == "TRAILING_TEAM_LOSS"
+        assert bool(audit.iloc[0]["has_extra_periods"]) is False

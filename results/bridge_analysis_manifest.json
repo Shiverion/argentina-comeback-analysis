@@ -1,0 +1,300 @@
+{
+  "artifacts": [
+    {
+      "path": "results/bridge_statsbomb_world_cup_oof_predictions.csv",
+      "rows": 7372,
+      "sha256": "2bc66392e1c83e3023dd55f0c3bc0e73bbae4bde5589136402e4271bf787cd8b"
+    },
+    {
+      "path": "results/bridge_statsbomb_club_oof_predictions.csv",
+      "rows": 123444,
+      "sha256": "be5d7ff794a23953cbebd12bab64b1d0a3cbd8c63037adce19ff82c5be27853b"
+    },
+    {
+      "path": "results/bridge_statsbomb_intl_oof_predictions.csv",
+      "rows": 10652,
+      "sha256": "711f196b232c255a6d396a3a72825ee15b481214bdd5f72e9af7ee4324b41dbb"
+    },
+    {
+      "path": "results/bridge_penalty_win_impact.csv",
+      "rows": 60,
+      "sha256": "e165e4a1468ee2869c35e858414c2e08af5c911d0afda33c12f02d761899c6cc"
+    },
+    {
+      "path": "results/bridge_model_skill.csv",
+      "rows": 12,
+      "sha256": "091772ace90954a551715f385309ffad870cfae6b7fa5c7764ee0e7a82cfca79"
+    },
+    {
+      "path": "results/assets/12_bridge_model_skill.png",
+      "sha256": "1ec97c56df165d141a0cac896c0c11d48279ab4b483eb00f282b6469f33e8741"
+    },
+    {
+      "path": "results/assets/13_penalty_win_impact.png",
+      "sha256": "3d93cbf32c104b58b0eb34cc1a3f89e218cf0a4233dd501d6b12437597d78a00"
+    }
+  ],
+  "created_at": "2026-07-12T20:43:04+00:00",
+  "interpretation": "The bridge model predicts final regulation result from a pre-window state. Opportunity variants are robustness checks; the penalty scenarios change only goal_diff_pre by one goal and therefore estimate immediate score-state sensitivity, not the full tactical or psychological effect of a penalty.",
+  "models": [
+    {
+      "models": [
+        {
+          "accuracy": 0.5613130765056973,
+          "features": [
+            "time_bin_start_minute",
+            "goal_diff_pre",
+            "red_cards_for_pre",
+            "red_cards_against_pre",
+            "home_indicator"
+          ],
+          "folds": 5,
+          "log_loss": 0.8707365981743682,
+          "multiclass_brier": 0.5101532453586763,
+          "rows": 7372,
+          "variant": "state_only"
+        },
+        {
+          "accuracy": 0.5807107976125881,
+          "features": [
+            "time_bin_start_minute",
+            "goal_diff_pre",
+            "red_cards_for_pre",
+            "red_cards_against_pre",
+            "home_indicator",
+            "box_entries_prev_5m",
+            "box_receipts_prev_5m",
+            "non_penalty_xg_prev_5m",
+            "final_third_entries_prev_5m"
+          ],
+          "folds": 5,
+          "log_loss": 0.8713337562773011,
+          "multiclass_brier": 0.5103576706962829,
+          "rows": 7372,
+          "variant": "spatial_augmented"
+        },
+        {
+          "accuracy": 0.5785404232230059,
+          "features": [
+            "time_bin_start_minute",
+            "goal_diff_pre",
+            "red_cards_for_pre",
+            "red_cards_against_pre",
+            "home_indicator",
+            "box_entries_prev_5m",
+            "box_receipts_prev_5m",
+            "non_penalty_xg_prev_5m",
+            "final_third_entries_prev_5m",
+            "possession_sequences_prev_5m"
+          ],
+          "folds": 5,
+          "log_loss": 0.871731171316556,
+          "multiclass_brier": 0.5105459102210402,
+          "rows": 7372,
+          "variant": "possession_augmented"
+        },
+        {
+          "accuracy": 0.5851871947911015,
+          "features": [
+            "time_bin_start_minute",
+            "goal_diff_pre",
+            "red_cards_for_pre",
+            "red_cards_against_pre",
+            "home_indicator",
+            "box_entries_prev_5m",
+            "box_receipts_prev_5m",
+            "non_penalty_xg_prev_5m",
+            "final_third_entries_prev_5m",
+            "possession_sequences_prev_5m",
+            "fouls_committed_prev_5m",
+            "fouls_suffered_prev_5m",
+            "yellow_cards_prev_5m",
+            "opponent_box_entries_prev_5m",
+            "opponent_non_penalty_xg_prev_5m"
+          ],
+          "folds": 5,
+          "log_loss": 0.8726619593455418,
+          "multiclass_brier": 0.510664366461672,
+          "rows": 7372,
+          "variant": "opportunity_augmented"
+        }
+      ],
+      "panel": "statsbomb_world_cup",
+      "tier": "world_cup"
+    },
+    {
+      "models": [
+        {
+          "accuracy": 0.6448430057353942,
+          "features": [
+            "time_bin_start_minute",
+            "goal_diff_pre",
+            "red_cards_for_pre",
+            "red_cards_against_pre",
+            "home_indicator"
+          ],
+          "folds": 5,
+          "log_loss": 0.7894694355754212,
+          "multiclass_brier": 0.46007874340333144,
+          "rows": 123444,
+          "variant": "state_only"
+        },
+        {
+          "accuracy": 0.6468925180648715,
+          "features": [
+            "time_bin_start_minute",
+            "goal_diff_pre",
+            "red_cards_for_pre",
+            "red_cards_against_pre",
+            "home_indicator",
+            "box_entries_prev_5m",
+            "box_receipts_prev_5m",
+            "non_penalty_xg_prev_5m",
+            "final_third_entries_prev_5m"
+          ],
+          "folds": 5,
+          "log_loss": 0.7875754727412562,
+          "multiclass_brier": 0.45895255250904887,
+          "rows": 123444,
+          "variant": "spatial_augmented"
+        },
+        {
+          "accuracy": 0.6461634425326463,
+          "features": [
+            "time_bin_start_minute",
+            "goal_diff_pre",
+            "red_cards_for_pre",
+            "red_cards_against_pre",
+            "home_indicator",
+            "box_entries_prev_5m",
+            "box_receipts_prev_5m",
+            "non_penalty_xg_prev_5m",
+            "final_third_entries_prev_5m",
+            "possession_sequences_prev_5m"
+          ],
+          "folds": 5,
+          "log_loss": 0.7871178449633291,
+          "multiclass_brier": 0.45868981487022753,
+          "rows": 123444,
+          "variant": "possession_augmented"
+        },
+        {
+          "accuracy": 0.6462363500858689,
+          "features": [
+            "time_bin_start_minute",
+            "goal_diff_pre",
+            "red_cards_for_pre",
+            "red_cards_against_pre",
+            "home_indicator",
+            "box_entries_prev_5m",
+            "box_receipts_prev_5m",
+            "non_penalty_xg_prev_5m",
+            "final_third_entries_prev_5m",
+            "possession_sequences_prev_5m",
+            "fouls_committed_prev_5m",
+            "fouls_suffered_prev_5m",
+            "yellow_cards_prev_5m",
+            "opponent_box_entries_prev_5m",
+            "opponent_non_penalty_xg_prev_5m"
+          ],
+          "folds": 5,
+          "log_loss": 0.784708780059016,
+          "multiclass_brier": 0.45735158968339024,
+          "rows": 123444,
+          "variant": "opportunity_augmented"
+        }
+      ],
+      "panel": "statsbomb_history",
+      "tier": "club"
+    },
+    {
+      "models": [
+        {
+          "accuracy": 0.6081487044686444,
+          "features": [
+            "time_bin_start_minute",
+            "goal_diff_pre",
+            "red_cards_for_pre",
+            "red_cards_against_pre",
+            "home_indicator"
+          ],
+          "folds": 5,
+          "log_loss": 0.8475196847890163,
+          "multiclass_brier": 0.5099166544386723,
+          "rows": 10652,
+          "variant": "state_only"
+        },
+        {
+          "accuracy": 0.6073976717987233,
+          "features": [
+            "time_bin_start_minute",
+            "goal_diff_pre",
+            "red_cards_for_pre",
+            "red_cards_against_pre",
+            "home_indicator",
+            "box_entries_prev_5m",
+            "box_receipts_prev_5m",
+            "non_penalty_xg_prev_5m",
+            "final_third_entries_prev_5m"
+          ],
+          "folds": 5,
+          "log_loss": 0.8434272530652235,
+          "multiclass_brier": 0.507630313448155,
+          "rows": 10652,
+          "variant": "spatial_augmented"
+        },
+        {
+          "accuracy": 0.6073037927149831,
+          "features": [
+            "time_bin_start_minute",
+            "goal_diff_pre",
+            "red_cards_for_pre",
+            "red_cards_against_pre",
+            "home_indicator",
+            "box_entries_prev_5m",
+            "box_receipts_prev_5m",
+            "non_penalty_xg_prev_5m",
+            "final_third_entries_prev_5m",
+            "possession_sequences_prev_5m"
+          ],
+          "folds": 5,
+          "log_loss": 0.8418947340459544,
+          "multiclass_brier": 0.5067439929238804,
+          "rows": 10652,
+          "variant": "possession_augmented"
+        },
+        {
+          "accuracy": 0.6045812992865189,
+          "features": [
+            "time_bin_start_minute",
+            "goal_diff_pre",
+            "red_cards_for_pre",
+            "red_cards_against_pre",
+            "home_indicator",
+            "box_entries_prev_5m",
+            "box_receipts_prev_5m",
+            "non_penalty_xg_prev_5m",
+            "final_third_entries_prev_5m",
+            "possession_sequences_prev_5m",
+            "fouls_committed_prev_5m",
+            "fouls_suffered_prev_5m",
+            "yellow_cards_prev_5m",
+            "opponent_box_entries_prev_5m",
+            "opponent_non_penalty_xg_prev_5m"
+          ],
+          "folds": 5,
+          "log_loss": 0.8402214320522099,
+          "multiclass_brier": 0.5062526633817499,
+          "rows": 10652,
+          "variant": "opportunity_augmented"
+        }
+      ],
+      "panel": "statsbomb_history",
+      "tier": "intl"
+    }
+  ],
+  "non_pooling_rule": "World Cup, selected club, and selected non-World-Cup international panels remain separate.",
+  "pipeline": "research_etl.bridge_analysis",
+  "primary_variant": "opportunity_augmented",
+  "status": "ready"
+}

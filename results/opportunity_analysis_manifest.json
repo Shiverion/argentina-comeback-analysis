@@ -1,0 +1,251 @@
+{
+  "artifacts": [
+    {
+      "path": "results/opportunity_pmsr_2026_team_summary.csv",
+      "rows": 48,
+      "sha256": "b1d2017db3c1420afd046ddf1910fe065a82338177577bc706b504dc11119e52"
+    },
+    {
+      "path": "results/assets/09_pmsr_2026_penalties_vs_xg.png",
+      "sha256": "6e440e39f92243dae39fac709176bf3ad2763ccf705f285a6bd5c4212ce75014"
+    },
+    {
+      "path": "results/opportunity_statsbomb_world_cup_oof_predictions.csv",
+      "rows": 256,
+      "sha256": "8a6d78625d19145c64c569cd8fd42339ce33ddfb583cb51d61e3f137019dba6b"
+    },
+    {
+      "path": "results/assets/10_statsbomb_world_cup_box_entries_vs_penalty_shots.png",
+      "sha256": "8c2a4c697ac2e382e3635ef77ff33f248dc8998794a46ce18e6f03828397337e"
+    },
+    {
+      "path": "results/opportunity_statsbomb_club_oof_predictions.csv",
+      "rows": 4386,
+      "sha256": "0ec82303d144a6f308976a515fd3aa5fd094ed2785eba81be2717c6736a89f9d"
+    },
+    {
+      "path": "results/opportunity_statsbomb_club_team_residuals.csv",
+      "rows": 144,
+      "sha256": "b0691ccb137bab9c03ad0c2b1f21a14fb785a8e3cf5de049cdd2f3b39189dc57"
+    },
+    {
+      "path": "results/opportunity_statsbomb_intl_oof_predictions.csv",
+      "rows": 372,
+      "sha256": "2198be696fc7b820ba38d0058a65de875211469b48951ab025829356c8cb6379"
+    },
+    {
+      "path": "results/opportunity_correlation_tests.csv",
+      "rows": 11,
+      "sha256": "480da19c568b72adea99db2dce62203119fd6d74b1ee3702218310a24d355260"
+    }
+  ],
+  "created_at": "2026-07-12T20:35:03+00:00",
+  "inference": {
+    "correlation_test": "Spearman correlation with 95% match-cluster bootstrap interval and whole-match permutation p-value.",
+    "interpretation": "Significance indicates association under the permutation design; it does not establish causality, decision correctness, or officiating bias.",
+    "multiple_testing": "Benjamini-Hochberg false-discovery-rate correction across the registered correlation family.",
+    "permutation_replicates": 10000
+  },
+  "interpretation": "Descriptive association and partial opportunity-adjusted residuals only. The current model excludes pre-decision score state, strength, and validated decision correctness; it cannot identify bias or intent.",
+  "models": [
+    {
+      "model_status": "descriptive_only",
+      "panel": "pmsr_2026",
+      "possession_spearman": {
+        "bh_q_value": 0.027277272272772723,
+        "clusters": 96,
+        "correlation": 0.1772665420760041,
+        "exposure": "team_possession_pct",
+        "lower": 0.023922024887649898,
+        "method": "whole_cluster_permutation",
+        "null_lower": -0.1400965623450093,
+        "null_upper": 0.13830709701402744,
+        "outcome": "penalties_awarded",
+        "panel": "pmsr_2026",
+        "permutation_p_value": 0.012398760123987601,
+        "replicates": 10000,
+        "rows": 192,
+        "significant_bh_05": true,
+        "tier": null,
+        "upper": 0.3042152112542168
+      },
+      "xg_spearman": {
+        "bh_q_value": 0.00036663000366630007,
+        "clusters": 96,
+        "correlation": 0.3795994704339922,
+        "exposure": "xg",
+        "lower": 0.2805776266340213,
+        "method": "whole_cluster_permutation",
+        "null_lower": -0.14660757675175703,
+        "null_upper": 0.14007069622452947,
+        "outcome": "penalties_awarded",
+        "panel": "pmsr_2026",
+        "permutation_p_value": 9.999000099990002e-05,
+        "replicates": 10000,
+        "rows": 192,
+        "significant_bh_05": true,
+        "tier": null,
+        "upper": 0.4690747723289742
+      }
+    },
+    {
+      "box_entry_spearman": {
+        "bh_q_value": 0.6911308869113089,
+        "clusters": 128,
+        "correlation": 0.025836191924256735,
+        "exposure": "box_entries",
+        "lower": -0.1012921642371678,
+        "method": "whole_cluster_permutation",
+        "null_lower": -0.12011652958218244,
+        "null_upper": 0.1267573211391499,
+        "outcome": "penalty_shots",
+        "panel": "statsbomb_world_cup",
+        "permutation_p_value": 0.6911308869113089,
+        "replicates": 10000,
+        "rows": 256,
+        "significant_bh_05": false,
+        "tier": null,
+        "upper": 0.13990389679512277
+      },
+      "features": [
+        "box_entries",
+        "non_penalty_xg"
+      ],
+      "folds": 5,
+      "matches": 128,
+      "nonzero_outcomes": 47,
+      "null_mean_poisson_deviance": 0.6704422268432069,
+      "oof_beats_null": false,
+      "oof_mean_poisson_deviance": 0.6765096998100394,
+      "outcome": "penalty_outcome",
+      "panel": "statsbomb_world_cup",
+      "possession_spearman": {
+        "bh_q_value": 0.48664022486640224,
+        "clusters": 128,
+        "correlation": 0.05862315303409876,
+        "exposure": "possession_sequence_share",
+        "lower": -0.06794116952316467,
+        "method": "whole_cluster_permutation",
+        "null_lower": -0.11687909733254091,
+        "null_upper": 0.13221436857692775,
+        "outcome": "penalty_shots",
+        "panel": "statsbomb_world_cup",
+        "permutation_p_value": 0.3621637836216378,
+        "replicates": 10000,
+        "rows": 256,
+        "significant_bh_05": false,
+        "tier": null,
+        "upper": 0.17926545099872837
+      },
+      "rows": 256,
+      "tier": null
+    },
+    {
+      "box_entry_spearman": {
+        "bh_q_value": 0.00036663000366630007,
+        "clusters": 2193,
+        "correlation": 0.08801664596717902,
+        "exposure": "box_entries",
+        "lower": 0.05973007355178192,
+        "method": "whole_cluster_permutation",
+        "null_lower": -0.006698397567982139,
+        "null_upper": 0.049136889262877625,
+        "outcome": "penalty_shots",
+        "panel": "statsbomb_history",
+        "permutation_p_value": 9.999000099990002e-05,
+        "replicates": 10000,
+        "rows": 4386,
+        "significant_bh_05": true,
+        "tier": "club",
+        "upper": 0.11627315294593944
+      },
+      "features": [
+        "box_entries",
+        "non_penalty_xg"
+      ],
+      "folds": 5,
+      "matches": 2193,
+      "nonzero_outcomes": 565,
+      "null_mean_poisson_deviance": 0.5711817646699443,
+      "oof_beats_null": true,
+      "oof_mean_poisson_deviance": 0.5685668004059561,
+      "outcome": "penalty_outcome",
+      "panel": "statsbomb_history",
+      "possession_spearman": {
+        "bh_q_value": 0.0010998900109989002,
+        "clusters": 2193,
+        "correlation": 0.06588284075340971,
+        "exposure": "possession_sequence_share",
+        "lower": 0.03855651289427324,
+        "method": "whole_cluster_permutation",
+        "null_lower": -0.014316902009457209,
+        "null_upper": 0.04233662701926924,
+        "outcome": "penalty_shots",
+        "panel": "statsbomb_history",
+        "permutation_p_value": 0.00039996000399960006,
+        "replicates": 10000,
+        "rows": 4386,
+        "significant_bh_05": true,
+        "tier": "club",
+        "upper": 0.09315176749643593
+      },
+      "rows": 4386,
+      "tier": "club"
+    },
+    {
+      "box_entry_spearman": {
+        "bh_q_value": 0.5382861713828617,
+        "clusters": 186,
+        "correlation": -0.03397022804119461,
+        "exposure": "box_entries",
+        "lower": -0.11811368993690008,
+        "method": "whole_cluster_permutation",
+        "null_lower": -0.09172733977052361,
+        "null_upper": 0.1010836721026732,
+        "outcome": "penalty_shots",
+        "panel": "statsbomb_history",
+        "permutation_p_value": 0.48935106489351066,
+        "replicates": 10000,
+        "rows": 372,
+        "significant_bh_05": false,
+        "tier": "intl",
+        "upper": 0.057227796372275964
+      },
+      "features": [
+        "box_entries",
+        "non_penalty_xg"
+      ],
+      "folds": 5,
+      "matches": 186,
+      "nonzero_outcomes": 55,
+      "null_mean_poisson_deviance": 0.6138989551406331,
+      "oof_beats_null": false,
+      "oof_mean_poisson_deviance": 0.6218813745029442,
+      "outcome": "penalty_outcome",
+      "panel": "statsbomb_history",
+      "possession_spearman": {
+        "bh_q_value": 0.48664022486640224,
+        "clusters": 186,
+        "correlation": 0.04130415856395831,
+        "exposure": "possession_sequence_share",
+        "lower": -0.049722117463485274,
+        "method": "whole_cluster_permutation",
+        "null_lower": -0.08733216582076941,
+        "null_upper": 0.10002358086636798,
+        "outcome": "penalty_shots",
+        "panel": "statsbomb_history",
+        "permutation_p_value": 0.39816018398160186,
+        "replicates": 10000,
+        "rows": 372,
+        "significant_bh_05": false,
+        "tier": "intl",
+        "upper": 0.1341980864622454
+      },
+      "rows": 372,
+      "tier": "intl"
+    }
+  ],
+  "non_pooling_rule": "Models are fit and reported separately for every source population and competition tier.",
+  "pipeline": "research_etl.opportunity_analysis",
+  "status": "ready"
+}

@@ -1,0 +1,20 @@
+{
+  "artifacts": [
+    {
+      "filename": "statsbomb_world_cup_temporal_features.csv",
+      "matches": 128,
+      "rows": 7372,
+      "sha256": "b236e1750fd253e39e1d26ea50dad28a6ecaa601e128e41b0efb37a91197e66c"
+    },
+    {
+      "filename": "statsbomb_history_temporal_features.csv",
+      "matches": 2379,
+      "rows": 134096,
+      "sha256": "82046414d8996e2c5babb87121e7ef1cd99adc0c2ca0d8c18984da93e711a809"
+    }
+  ],
+  "created_at": "2026-07-12T20:41:06+00:00",
+  "non_pooling_rule": "World Cup, selected club, selected non-World-Cup international, and FIFA PMSR 2026 feature panels remain separate. They may validate mechanisms across populations but must not be pooled into a single FIFA-officiating estimate.",
+  "pipeline": "research_etl.opportunity_features",
+  "status": "ready"
+}

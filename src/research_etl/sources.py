@@ -148,6 +148,7 @@ def extract_sources(
     *,
     include_statsbomb: bool = False,
     include_statsbomb_events: bool = False,
+    include_statsbomb_history: bool = False,
     force_download: bool = False,
 ) -> list[dict[str, Any]]:
     """Extract source files required by the pipeline and persist a run manifest."""
@@ -225,6 +226,15 @@ def extract_sources(
             )
         )
 
+    if include_statsbomb_history:
+        records.extend(
+            _extract_statsbomb_history(
+                paths,
+                config["statsbomb_history"],
+                force=force_download,
+            )
+        )
+
     write_json_atomic(
         {
             "pipeline": "research_etl.extract",
@@ -270,6 +280,52 @@ def _extract_statsbomb(
         if not include_events:
             continue
 
+        matches = json.loads(matches_path.read_text(encoding="utf-8"))
+        for match in matches:
+            match_id = match["match_id"]
+            records.append(
+                download_file(
+                    source_id=source["source_id"],
+                    url=f"{source['base_url']}/events/{match_id}.json",
+                    destination=target_dir / "events" / f"{match_id}.json",
+                    root=paths.root,
+                    force=force,
+                )
+            )
+    return records
+
+
+def _extract_statsbomb_history(
+    paths: ProjectPaths,
+    source: dict[str, Any],
+    *,
+    force: bool,
+) -> list[dict[str, Any]]:
+    """Cache the pinned metadata and event streams for the broader baseline."""
+
+    target_dir = paths.root / source["raw_target_dir"]
+    records = [
+        download_file(
+            source_id=source["source_id"],
+            url=f"{source['base_url']}/competitions.json",
+            destination=target_dir / "competitions.json",
+            root=paths.root,
+            force=force,
+        )
+    ]
+    for pair in source["pairs"]:
+        competition_id = int(pair["competition_id"])
+        season_id = int(pair["season_id"])
+        matches_path = target_dir / "matches" / str(competition_id) / f"{season_id}.json"
+        records.append(
+            download_file(
+                source_id=source["source_id"],
+                url=f"{source['base_url']}/matches/{competition_id}/{season_id}.json",
+                destination=matches_path,
+                root=paths.root,
+                force=force,
+            )
+        )
         matches = json.loads(matches_path.read_text(encoding="utf-8"))
         for match in matches:
             match_id = match["match_id"]

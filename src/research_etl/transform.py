@@ -8,10 +8,14 @@ from typing import Any
 import pandas as pd
 
 from research_etl.contracts import FOCAL_EVENT_COLUMNS, INCIDENT_COLUMNS, STRENGTH_COLUMNS, missing_columns
+from research_etl.opportunity import build_history_features_from_raw, build_world_cup_features_from_raw
+from research_etl.temporal import build_temporal_history_features_from_raw, build_temporal_world_cup_features_from_raw
 from research_etl.paths import ProjectPaths
 from research_etl.pmsr import PMSR_EXTRACT_COLUMNS, aggregate_team_penalties, validate_pmsr_extract
+from research_etl.pmsr_stats import build_pmsr_2026_match_features
 from research_etl.sources import SourceError, load_config, sha256_file, write_json_atomic
 from research_etl.strength import build_pre_match_strength
+from research_etl.statsbomb_history import build_history_from_raw
 
 
 def _utc_now() -> str:
@@ -405,7 +409,171 @@ def build_model_frame(
     return pd.DataFrame(rows), {"status": "ready", "rows": len(rows), "matches": len(regulation)}
 
 
-def transform_sources(paths: ProjectPaths) -> dict[str, Any]:
+def _build_or_preserve_statsbomb_history(
+    paths: ProjectPaths,
+    config: dict[str, Any],
+    *,
+    rebuild: bool,
+) -> dict[str, Any]:
+    history = config["statsbomb_history"]
+    filenames = [
+        "statsbomb_historical_match_events.csv",
+        "statsbomb_historical_snapshots.csv",
+        "statsbomb_history_match_audit.csv",
+    ]
+    if rebuild:
+        raw_dir = paths.root / history["raw_target_dir"]
+        try:
+            events, snapshots, audit = build_history_from_raw(
+                raw_dir,
+                pairs=history["pairs"],
+                thresholds=[int(value) for value in history["threshold_minutes"]],
+                source_version=history["pinned_commit"],
+            )
+        except (FileNotFoundError, KeyError, TypeError, ValueError) as error:
+            raise SourceError(f"StatsBomb history rebuild failed: {error}") from error
+        outputs = {
+            filenames[0]: events,
+            filenames[1]: snapshots,
+            filenames[2]: audit,
+        }
+        for filename, frame in outputs.items():
+            write_csv_atomic(frame, paths.processed_dir / filename)
+        status = "rebuilt"
+    else:
+        missing = [filename for filename in filenames if not (paths.processed_dir / filename).exists()]
+        if missing:
+            return {
+                "status": "not_available",
+                "source_id": history["source_id"],
+                "pinned_commit": history["pinned_commit"],
+                "artifacts": [],
+                "missing_artifacts": missing,
+            }
+        status = "preserved"
+
+    artifacts = []
+    for filename in filenames:
+        path = paths.processed_dir / filename
+        frame = pd.read_csv(path)
+        artifacts.append(
+            {
+                "filename": filename,
+                "rows": int(len(frame)),
+                "sha256": sha256_file(path),
+            }
+        )
+    return {
+        "status": status,
+        "source_id": history["source_id"],
+        "pinned_commit": history["pinned_commit"],
+        "artifacts": artifacts,
+        "matches": int(pd.read_csv(paths.processed_dir / filenames[1])["match_id"].nunique()),
+    }
+
+
+def build_opportunity_artifacts(
+    paths: ProjectPaths,
+    *,
+    build_statsbomb_world_cup: bool = False,
+    build_statsbomb_history: bool = False,
+    build_pmsr_2026: bool = False,
+    build_statsbomb_temporal: bool = False,
+) -> dict[str, Any]:
+    """Build compact, non-pooled opportunity-feature panels on explicit request.
+
+    This intentionally lives outside the default case-study transform: the
+    feature panels need high-resolution event/PDF material and serve a distinct
+    opportunity-adjusted analysis notebook.
+    """
+
+    if not any((build_statsbomb_world_cup, build_statsbomb_history, build_pmsr_2026, build_statsbomb_temporal)):
+        raise SourceError("Select at least one opportunity feature source.")
+
+    paths.ensure_directories()
+    config = load_config(paths)
+    outputs: dict[str, pd.DataFrame] = {}
+
+    if build_statsbomb_world_cup:
+        source = config["statsbomb_open_data"]
+        try:
+            outputs["statsbomb_world_cup_opportunity_features.csv"] = build_world_cup_features_from_raw(
+                paths.root / source["target_dir"],
+                competition_id=int(source["competition_id"]),
+                season_ids=[int(value) for value in source["season_ids"]],
+                source_version=str(source["pinned_commit"]),
+            )
+        except (FileNotFoundError, KeyError, TypeError, ValueError) as error:
+            raise SourceError(f"StatsBomb World Cup opportunity build failed: {error}") from error
+
+    if build_statsbomb_history:
+        source = config["statsbomb_history"]
+        try:
+            outputs["statsbomb_history_opportunity_features.csv"] = build_history_features_from_raw(
+                paths.root / source["raw_target_dir"],
+                pairs=source["pairs"],
+                source_version=str(source["pinned_commit"]),
+            )
+        except (FileNotFoundError, KeyError, TypeError, ValueError) as error:
+            raise SourceError(f"StatsBomb history opportunity build failed: {error}") from error
+
+    if build_statsbomb_temporal:
+        source = config["statsbomb_open_data"]
+        try:
+            outputs["statsbomb_world_cup_temporal_features.csv"] = build_temporal_world_cup_features_from_raw(
+                paths.root / source["target_dir"],
+                competition_id=int(source["competition_id"]),
+                season_ids=[int(value) for value in source["season_ids"]],
+                source_version=str(source["pinned_commit"]),
+            )
+        except (FileNotFoundError, KeyError, TypeError, ValueError) as error:
+            raise SourceError(f"StatsBomb World Cup temporal build failed: {error}") from error
+        history_source = config["statsbomb_history"]
+        try:
+            outputs["statsbomb_history_temporal_features.csv"] = build_temporal_history_features_from_raw(
+                paths.root / history_source["raw_target_dir"],
+                pairs=history_source["pairs"],
+                source_version=str(history_source["pinned_commit"]),
+            )
+        except (FileNotFoundError, KeyError, TypeError, ValueError) as error:
+            raise SourceError(f"StatsBomb history temporal build failed: {error}") from error
+
+    if build_pmsr_2026:
+        source = config["pmsr_2026"]
+        raw_extract = _required_csv(
+            paths.root / source["raw_target"], PMSR_EXTRACT_COLUMNS, "PMSR 2026 extraction"
+        )
+        outputs["pmsr_2026_match_features.csv"] = build_pmsr_2026_match_features(raw_extract)
+
+    artifacts = []
+    for filename, frame in outputs.items():
+        destination = paths.processed_dir / filename
+        write_csv_atomic(frame, destination)
+        artifacts.append(
+            {
+                "filename": filename,
+                "rows": int(len(frame)),
+                "matches": int(frame["match_id"].nunique()) if "match_id" in frame else int(frame["match_number"].nunique()),
+                "sha256": sha256_file(destination),
+            }
+        )
+
+    manifest = {
+        "pipeline": "research_etl.opportunity_features",
+        "created_at": _utc_now(),
+        "status": "ready",
+        "non_pooling_rule": (
+            "World Cup, selected club, selected non-World-Cup international, and FIFA PMSR 2026 "
+            "feature panels remain separate. They may validate mechanisms across populations but must not "
+            "be pooled into a single FIFA-officiating estimate."
+        ),
+        "artifacts": artifacts,
+    }
+    write_json_atomic(manifest, paths.processed_dir / "opportunity_feature_manifest.json")
+    return manifest
+
+
+def transform_sources(paths: ProjectPaths, *, rebuild_statsbomb_history: bool = False) -> dict[str, Any]:
     """Load raw source lanes, normalize tables, and create notebook-ready artifacts."""
 
     paths.ensure_directories()
@@ -503,6 +671,13 @@ def transform_sources(paths: ProjectPaths) -> dict[str, Any]:
             {"filename": "model_frame.csv", "rows": int(len(model_frame)), "sha256": sha256_file(model_path)}
         )
 
+    statsbomb_history_status = _build_or_preserve_statsbomb_history(
+        paths,
+        config,
+        rebuild=rebuild_statsbomb_history,
+    )
+    artifact_rows.extend(statsbomb_history_status["artifacts"])
+
     manifest = {
         "pipeline": "research_etl.transform",
         "created_at": _utc_now(),
@@ -512,6 +687,7 @@ def transform_sources(paths: ProjectPaths) -> dict[str, Any]:
             "historical_timeline_resolution": "Minute-resolution goals and bookings are placed at the end of their recorded minute.",
             "historical_coverage": "Fjelstul World Cup Database covers men's World Cups through 2022; 2026 focal data is held separately.",
         },
+        "statsbomb_history": statsbomb_history_status,
     }
     write_json_atomic(manifest, paths.processed_dir / "run_manifest.json")
     return manifest

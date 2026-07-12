@@ -3,15 +3,23 @@
     {
       "path": "results/broader_baseline_rarity.csv",
       "rows": 8,
-      "sha256": "2adbb29de19393b99b42619dd93b4e3aa7581e710581751c565f2db9d9b4db66"
+      "sha256": "3069ecb01bf20a7cc9c8cc58bc1f8f9902aca2997d821be7ce2889bbe2ac3f49"
     },
     {
       "path": "results/broader_baseline_continuation.csv",
       "rows": 16,
-      "sha256": "9942fa687aa2bc65c935518b0b77f441099143509cb8b5402e4a334060550f3c"
+      "sha256": "2a7a47613a5d55fc1d702de00d03a96cee70ac5d3ce296c6023670d551dd7498"
+    },
+    {
+      "path": "results/assets/07_broader_baseline_rarity.png",
+      "sha256": "bde2b7bbe4396ead29aa60322b7e0b629c33731e1554d26251fefd9a17295933"
+    },
+    {
+      "path": "results/assets/08_broader_baseline_continuation.png",
+      "sha256": "ef56fc21a59288d27f508a9743d1e2c1c557bcd514ffeb0b6a082f0ca0488ba1"
     }
   ],
-  "created_at": "2026-07-11T00:00:41+00:00",
+  "created_at": "2026-07-11T09:03:00+00:00",
   "non_pooling_rule": "club and intl tiers are reported separately from each other and from the World-Cup-only baseline in every row above -- never combined into one figure.",
   "pipeline": "research_etl.analysis.broader_baseline_sensitivity",
   "status": "ready"

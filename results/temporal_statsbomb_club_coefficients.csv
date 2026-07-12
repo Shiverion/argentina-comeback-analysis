@@ -1,0 +1,15 @@
+feature,standardized_logit_coefficient
+fouls_suffered_prev_5m,0.27445640788922715
+box_entries_prev_5m,0.26323174164257335
+final_third_entries_prev_5m,0.1568183461523935
+red_cards_against_pre,0.14839651997971956
+time_bin_start_minute,0.12386568267637377
+fouls_committed_prev_5m,0.1130814490729332
+possession_sequences_prev_5m,0.07387796864918718
+opponent_box_entries_prev_5m,0.07109766211369278
+box_receipts_prev_5m,0.06418475293333431
+red_cards_for_pre,-0.05167876075860716
+opponent_non_penalty_xg_prev_5m,0.04039256876022514
+goal_diff_pre,-0.032518124673629724
+yellow_cards_prev_5m,-0.003426414887370166
+non_penalty_xg_prev_5m,0.002309800828165425

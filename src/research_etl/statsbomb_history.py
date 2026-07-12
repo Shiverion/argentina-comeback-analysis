@@ -13,11 +13,44 @@ separately, alongside the World Cup baseline, never merged into one figure.
 
 from __future__ import annotations
 
+import json
+from pathlib import Path
 from typing import Any
 
 import pandas as pd
 
 RED_CARD_NAMES = {"Red Card", "Second Yellow"}
+DEFAULT_SOURCE_NAME = "StatsBomb Open Data"
+
+
+def _same_id(left: Any, right: Any) -> bool:
+    return left is not None and right is not None and str(left) == str(right)
+
+
+def _canonical_team_name(match_meta: dict[str, Any], event: dict[str, Any]) -> str | None:
+    """Resolve an event team by StatsBomb ID, with name fallback for unit fixtures.
+
+    StatsBomb's match metadata can use a display name such as
+    ``Olympique de Marseille`` while the event stream uses ``Marseille``.
+    Team IDs are the stable join key; names are only a fallback for fixtures
+    that intentionally omit IDs in tests or older exports.
+    """
+
+    event_team = event.get("team") or {}
+    event_id = event_team.get("id")
+    home = match_meta["home_team"]
+    away = match_meta["away_team"]
+    if _same_id(event_id, home.get("home_team_id")):
+        return home["home_team_name"]
+    if _same_id(event_id, away.get("away_team_id")):
+        return away["away_team_name"]
+
+    event_name = event_team.get("name")
+    if event_name == home.get("home_team_name"):
+        return home["home_team_name"]
+    if event_name == away.get("away_team_name"):
+        return away["away_team_name"]
+    return None
 
 
 def extract_match_timeline(
@@ -26,6 +59,7 @@ def extract_match_timeline(
     *,
     tournament: str,
     tier: str,
+    source_version: str = "unknown",
 ) -> list[dict[str, Any]]:
     """One row per goal/red-card event for a single match, in historical-event-table shape."""
 
@@ -46,15 +80,20 @@ def extract_match_timeline(
             continue
         second = event.get("second", 0) or 0
         elapsed_seconds = int(minute) * 60 + int(second)
-        team_name = (event.get("team") or {}).get("name")
-        if not team_name:
+        event_type = (event.get("type") or {}).get("name")
+        if not event_type:
             continue
-        event_type = event["type"]["name"]
 
         is_goal = (
             event_type == "Shot" and (event.get("shot") or {}).get("outcome", {}).get("name") == "Goal"
         ) or event_type == "Own Goal For"
         if is_goal:
+            team_name = _canonical_team_name(match_meta, event)
+            if team_name is None:
+                raise ValueError(
+                    f"Could not map relevant event {event.get('id')} in match {match_id} "
+                    f"to {home_team} v {away_team} using team ID or canonical name."
+                )
             raw_rows.append(
                 {
                     "elapsed_seconds": elapsed_seconds,
@@ -73,6 +112,12 @@ def extract_match_timeline(
         elif event_type == "Bad Behaviour":
             card = ((event.get("bad_behaviour") or {}).get("card") or {}).get("name")
         if card in RED_CARD_NAMES:
+            team_name = _canonical_team_name(match_meta, event)
+            if team_name is None:
+                raise ValueError(
+                    f"Could not map relevant event {event.get('id')} in match {match_id} "
+                    f"to {home_team} v {away_team} using team ID or canonical name."
+                )
             raw_rows.append(
                 {
                     "elapsed_seconds": elapsed_seconds,
@@ -122,8 +167,8 @@ def extract_match_timeline(
                 "home_red_cards": home_red,
                 "away_red_cards": away_red,
                 "is_neutral": tier == "intl",
-                "source_name": "StatsBomb Open Data",
-                "source_version": "b0bc9f22",
+                "source_name": DEFAULT_SOURCE_NAME,
+                "source_version": source_version,
                 "competition_tier": tier,
             }
         )
@@ -143,7 +188,13 @@ def _state_at(events: list[dict[str, Any]], elapsed_seconds: int) -> dict[str, i
     }
 
 
-def build_snapshots(events_df: pd.DataFrame, matches_meta: list[dict[str, Any]], *, thresholds: list[int]) -> pd.DataFrame:
+def build_snapshots(
+    events_df: pd.DataFrame,
+    matches_meta: list[dict[str, Any]],
+    *,
+    thresholds: list[int],
+    source_version: str = "unknown",
+) -> pd.DataFrame:
     """One row per (match, threshold) from the trailing team's perspective -- mirrors transform.py."""
 
     by_match: dict[str, list[dict[str, Any]]] = {}
@@ -206,8 +257,99 @@ def build_snapshots(events_df: pd.DataFrame, matches_meta: list[dict[str, Any]],
                     "regulation_result": result,
                     "is_neutral": tier == "intl",
                     "competition_tier": tier,
-                    "source_name": "StatsBomb Open Data",
-                    "source_version": "b0bc9f22",
+                    "source_name": DEFAULT_SOURCE_NAME,
+                    "source_version": source_version,
                 }
             )
     return pd.DataFrame(rows)
+
+
+def build_history_from_raw(
+    raw_dir: Path,
+    *,
+    pairs: list[dict[str, Any]],
+    thresholds: list[int],
+    source_version: str,
+) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    """Build compact StatsBomb artifacts from pinned match and event JSON files.
+
+    The raw directory is intentionally cache-only. Every match is reconstructed
+    from its event stream, while the audit table preserves the metadata score
+    check and the raw-event coverage needed by the quality gate.
+    """
+
+    event_rows: list[dict[str, Any]] = []
+    match_meta_rows: list[dict[str, Any]] = []
+    audit_rows: list[dict[str, Any]] = []
+
+    for pair in pairs:
+        competition_id = int(pair["competition_id"])
+        season_id = int(pair["season_id"])
+        tier = str(pair["tier"])
+        matches_path = raw_dir / "matches" / str(competition_id) / f"{season_id}.json"
+        if not matches_path.exists():
+            raise FileNotFoundError(f"Missing StatsBomb match metadata: {matches_path}")
+        matches = json.loads(matches_path.read_text(encoding="utf-8"))
+        tournament = f"{pair['competition_name']} {pair['season_name']}"
+
+        for raw_match in matches:
+            match_id = str(raw_match["match_id"])
+            event_path = raw_dir / "events" / f"{match_id}.json"
+            if not event_path.exists():
+                raise FileNotFoundError(f"Missing StatsBomb event stream: {event_path}")
+            events = json.loads(event_path.read_text(encoding="utf-8"))
+            match_meta = {
+                **raw_match,
+                "_tournament": tournament,
+                "_year": int(str(raw_match["match_date"])[:4]),
+                "_tier": tier,
+            }
+            timeline = extract_match_timeline(
+                match_meta,
+                events,
+                tournament=tournament,
+                tier=tier,
+                source_version=source_version,
+            )
+            event_rows.extend(timeline)
+            match_meta_rows.append(match_meta)
+
+            regulation_home = timeline[-1]["home_score"] if timeline else 0
+            regulation_away = timeline[-1]["away_score"] if timeline else 0
+            metadata_home = raw_match.get("home_score")
+            metadata_away = raw_match.get("away_score")
+            has_extra_periods = any(event.get("period") not in (1, 2) for event in events)
+            audit_rows.append(
+                {
+                    "match_id": match_id,
+                    "competition_id": competition_id,
+                    "season_id": season_id,
+                    "tournament": tournament,
+                    "competition_tier": tier,
+                    "home_team": raw_match["home_team"]["home_team_name"],
+                    "away_team": raw_match["away_team"]["away_team_name"],
+                    "metadata_home_score": metadata_home,
+                    "metadata_away_score": metadata_away,
+                    "regulation_home_score": regulation_home,
+                    "regulation_away_score": regulation_away,
+                    "has_extra_periods": has_extra_periods,
+                    "event_count": len(events),
+                    "timeline_event_count": len(timeline),
+                    "source_version": source_version,
+                }
+            )
+
+    event_columns = [
+        "match_id", "event_id", "tournament", "year", "stage", "period", "elapsed_seconds",
+        "home_team", "away_team", "event_team", "event_type", "outcome", "home_score",
+        "away_score", "home_red_cards", "away_red_cards", "is_neutral", "source_name",
+        "source_version", "competition_tier",
+    ]
+    events_frame = pd.DataFrame(event_rows, columns=event_columns)
+    snapshots_frame = build_snapshots(
+        events_frame,
+        match_meta_rows,
+        thresholds=thresholds,
+        source_version=source_version,
+    )
+    return events_frame, snapshots_frame, pd.DataFrame(audit_rows)

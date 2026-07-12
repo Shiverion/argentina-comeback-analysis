@@ -20,6 +20,81 @@ def _utc_now() -> str:
     return datetime.now(timezone.utc).replace(microsecond=0).isoformat()
 
 
+def _render_broader_baseline_charts(
+    paths: ProjectPaths,
+    rarity: pd.DataFrame,
+    continuation: pd.DataFrame,
+    historical_events: pd.DataFrame,
+    historical_snapshots: pd.DataFrame,
+) -> list[Path]:
+    """Render the two broader-baseline figures from the same generated tables."""
+
+    import matplotlib.pyplot as plt
+
+    assets = paths.results_dir / "assets"
+    assets.mkdir(parents=True, exist_ok=True)
+    plt.rcParams.update({"font.size": 9, "axes.titleweight": "bold"})
+
+    rarity_path = assets / "07_broader_baseline_rarity.png"
+    fig, ax = plt.subplots(figsize=(9.5, 4.2))
+    for tier, color, marker in (("club", "#e34948", "o"), ("intl", "#6fa8d6", "s")):
+        subset = rarity.loc[rarity["competition_tier"].eq(tier)].sort_values("threshold_minute")
+        lower = (subset["empirical_probability"] - subset["wilson_lower"]).clip(lower=0) * 100
+        upper = (subset["wilson_upper"] - subset["empirical_probability"]).clip(lower=0) * 100
+        ax.errorbar(
+            subset["threshold_minute"], subset["empirical_probability"] * 100,
+            yerr=[lower, upper], fmt=f"{marker}-", color=color, linewidth=1.8,
+            capsize=3, label=f"{tier.title()} (n={int(subset['total_matches_in_tier'].iloc[0])} matches)",
+        )
+        if tier == "club":
+            for row in subset.itertuples():
+                offset = (0, -15) if int(row.threshold_minute) == 80 else (0, 8)
+                ax.annotate(
+                    f"{int(row.comeback_wins)}/{int(row.eligible_matches)}",
+                    (row.threshold_minute, row.empirical_probability * 100),
+                    textcoords="offset points", xytext=offset, ha="center", fontsize=7,
+                )
+    ax.set_xlabel("Threshold minute")
+    ax.set_ylabel("Comeback rate (%)")
+    ax.set_title("Late two-goal comebacks in the selected broader sample")
+    ax.set_ylim(-0.15, 1.6)
+    ax.spines[["top", "right"]].set_visible(False)
+    ax.legend(frameon=False, loc="upper right")
+    fig.tight_layout()
+    fig.savefig(rarity_path, dpi=180)
+    plt.close(fig)
+
+    wc_rows = []
+    for minute, goal_difference in FOCAL_CHECKPOINTS:
+        estimate = continuation_probability(
+            historical_events,
+            historical_snapshots,
+            elapsed_seconds=minute * 60,
+            goal_difference=goal_difference,
+        )
+        wc_rows.append({"minute": minute, "p_win": estimate.p_win, "lo": estimate.interval_lower, "hi": estimate.interval_upper})
+    world_cup = pd.DataFrame(wc_rows)
+
+    continuation_path = assets / "08_broader_baseline_continuation.png"
+    fig, ax = plt.subplots(figsize=(9.5, 4.2))
+    for tier, color, marker in (("club", "#e34948", "o"), ("intl", "#6fa8d6", "s")):
+        subset = continuation.loc[continuation["competition_tier"].eq(tier)].sort_values("minute")
+        ax.plot(subset["minute"], subset["p_win"] * 100, color=color, marker=marker, linewidth=1.8, label=f"{tier.title()} (StatsBomb)")
+        ax.fill_between(subset["minute"], subset["interval_lower"] * 100, subset["interval_upper"] * 100, color=color, alpha=0.12)
+    ax.plot(world_cup["minute"], world_cup["p_win"] * 100, color="#2a78d6", marker="^", linewidth=1.8, label="World Cup (Fjelstul)")
+    ax.fill_between(world_cup["minute"], world_cup["lo"] * 100, world_cup["hi"] * 100, color="#2a78d6", alpha=0.1)
+    ax.set_xlabel("Minute")
+    ax.set_ylabel("Regulation win probability (%)\n| same score state, broad historical lookup")
+    ax.set_title("Continuation probability across disjoint competition samples")
+    ax.set_ylim(-5, 105)
+    ax.spines[["top", "right"]].set_visible(False)
+    ax.legend(frameon=False, loc="upper left", fontsize=8)
+    fig.tight_layout()
+    fig.savefig(continuation_path, dpi=180)
+    plt.close(fig)
+    return [rarity_path, continuation_path]
+
+
 def run_scenario_only_analysis(paths: ProjectPaths) -> dict[str, Any]:
     """Execute configured conditional scenarios without assessing decision correctness."""
 
@@ -226,8 +301,17 @@ def run_broader_baseline_sensitivity(paths: ProjectPaths) -> dict[str, Any]:
 
     rarity_path = paths.results_dir / "broader_baseline_rarity.csv"
     continuation_path = paths.results_dir / "broader_baseline_continuation.csv"
-    write_csv_atomic(pd.DataFrame(rarity_rows), rarity_path)
-    write_csv_atomic(pd.DataFrame(continuation_rows), continuation_path)
+    rarity_frame = pd.DataFrame(rarity_rows)
+    continuation_frame = pd.DataFrame(continuation_rows)
+    write_csv_atomic(rarity_frame, rarity_path)
+    write_csv_atomic(continuation_frame, continuation_path)
+    chart_paths = _render_broader_baseline_charts(
+        paths,
+        rarity_frame,
+        continuation_frame,
+        events,
+        snapshots,
+    )
 
     manifest = {
         "pipeline": "research_etl.analysis.broader_baseline_sensitivity",
@@ -246,6 +330,13 @@ def run_broader_baseline_sensitivity(paths: ProjectPaths) -> dict[str, Any]:
                 "rows": int(len(continuation_rows)),
                 "sha256": sha256_file(continuation_path),
             },
+            *[
+                {
+                    "path": str(path.relative_to(paths.root)).replace("\\", "/"),
+                    "sha256": sha256_file(path),
+                }
+                for path in chart_paths
+            ],
         ],
     }
     write_json_atomic(manifest, paths.results_dir / "broader_baseline_manifest.json")

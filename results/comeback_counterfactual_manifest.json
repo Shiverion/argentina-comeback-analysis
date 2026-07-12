@@ -1,0 +1,18 @@
+{
+  "artifacts": [
+    {
+      "path": "results/comeback_counterfactual.csv",
+      "rows": 6,
+      "sha256": "a55b3b1e76a1c4cb8459b75dd515da05d7cf442b05c9a2de048119d5e509990e"
+    }
+  ],
+  "branches": {
+    "adaptive_historical_support": "Reports actual three-goal-deficit matches and Wilson uncertainty; does not claim the future would be unchanged.",
+    "fixed_score_0_3": "Mechanically changes a real 0-2 pre-window state to 0-3 in an out-of-fold model."
+  },
+  "created_at": "2026-07-12T22:21:22+00:00",
+  "focal_question": "Could Argentina still come back if Egypt's disallowed goal had stood and the later 66-minute goal made the state 0-3?",
+  "important_limit": "A dynamic tactical response to an alternate goal is not identifiable from one focal match and sparse historical three-goal-deficit wins.",
+  "pipeline": "research_etl.comeback_counterfactual",
+  "status": "ready"
+}
