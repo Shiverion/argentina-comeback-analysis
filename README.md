@@ -22,6 +22,60 @@ A reproducible, evidence-tiered statistical and counterfactual research project.
 | `results/` | Generated analysis outputs: the write-up, charts, and machine-readable result tables |
 | `config/sources.json` | Full data provenance — URLs, pinned commits, license notes, extraction methodology for every source |
 
+## System Design
+
+The project is a small, contract-driven ETL and analysis system. Its design goal is that every number in the report can be traced to a tiered source, a quality gate, and a test.
+
+### Requirements
+
+**Functional**
+- Estimate the historical rarity of late two-goal comebacks, the match-state win probability while Argentina trailed 0–2, and the sensitivity to disputed officiating decisions.
+- Produce a report, charts, machine-readable result tables, and an executable notebook.
+
+**Non-functional**
+- **Evidence tiers**: Tier A (official FIFA records) to Tier D (reporting); lower tiers can raise claims but cannot establish them.
+- **Reproducibility**: vendored raw data, pinned source commits, and run manifests; the notebook runs from a clean kernel against committed data.
+- **Honest uncertainty**: every probability carries its sample size and an interval; conflicting estimators are both reported.
+
+### Pipeline Architecture
+
+```text
+ data/raw/  FIFA PDFs (Tier A) · Fjelstul WC database · JGravier Elo · StatsBomb Open Data
+            manual review files (focal events, incidents, pre-match strength)
+     │  python -m research_etl run
+     ▼
+ sources.py / pmsr.py / statsbomb_history.py   extract (PDF parsing, JSON, CSV)
+     ▼
+ contracts.py + transform.py                   canonical tables with schema contracts
+     ▼
+ quality.py                                    quality gates ─► data_quality_report.json
+     ▼
+ strength.py · modeling.py · counterfactual.py · discipline.py · analysis.py
+     ▼
+ data/processed/*.csv + run_manifest.json ─► results/ (report, charts, tables)
+                                           ─► notebook ─► article PDF
+```
+
+### Key Design Choices
+
+- **Contracts before analysis.** Each canonical table has a declared schema; a failed quality gate stops the run instead of producing a partial result.
+- **Independent cross-validation sample.** A 2,193-match StatsBomb club-football sample checks World Cup-only rarity and probability estimates against an unrelated data source.
+- **No composite "bias index".** Officiating results are reported as conditional, decision-level sensitivities, never aggregated into a single advantage score.
+- **Manual inputs are explicit files.** Human-reviewed events and incidents live in `data/raw/manual/` and are versioned like any other source.
+
+### Trade-offs
+
+| Decision | Benefit | Cost |
+| --- | --- | --- |
+| Vendored raw data in Git | Fully offline, reproducible runs | Larger repository |
+| Two match-state estimators reported side by side | No cherry-picking | Less tidy headline number |
+| Descriptive discipline statistics | Avoids unsupported causal claims | Cannot adjust for possession, style, or opponent quality |
+
+### What to Revisit as It Grows
+
+- Add an event-level possession and style model before testing any officiating-bias hypothesis.
+- Package the ETL as a reusable "match rarity" toolkit with configurable focal matches.
+
 ## Reproducing the analysis
 
 ```powershell
