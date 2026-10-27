@@ -39,21 +39,41 @@ The project is a small, contract-driven ETL and analysis system. Its design goal
 
 ### Pipeline Architecture
 
-```text
- data/raw/  FIFA PDFs (Tier A) · Fjelstul WC database · JGravier Elo · StatsBomb Open Data
-            manual review files (focal events, incidents, pre-match strength)
-     │  python -m research_etl run
-     ▼
- sources.py / pmsr.py / statsbomb_history.py   extract (PDF parsing, JSON, CSV)
-     ▼
- contracts.py + transform.py                   canonical tables with schema contracts
-     ▼
- quality.py                                    quality gates ─► data_quality_report.json
-     ▼
- strength.py · modeling.py · counterfactual.py · discipline.py · analysis.py
-     ▼
- data/processed/*.csv + run_manifest.json ─► results/ (report, charts, tables)
-                                           ─► notebook ─► article PDF
+```mermaid
+flowchart TD
+    subgraph inputs["Inputs"]
+        Raw[("data/raw/<br/>FIFA PDFs (Tier A), Fjelstul WC database,<br/>JGravier Elo, StatsBomb Open Data")]
+        Manual[("Manual review files<br/>focal events, incidents,<br/>pre-match strength")]
+    end
+
+    subgraph etl["python -m research_etl run"]
+        Extract["sources.py, pmsr.py,<br/>statsbomb_history.py<br/>extract: PDF parsing, JSON, CSV"]
+        Transform["contracts.py + transform.py<br/>canonical tables with schema contracts"]
+        Gate{"quality.py<br/>quality gates"}
+        Analyze["strength.py, modeling.py,<br/>counterfactual.py, discipline.py,<br/>analysis.py"]
+        Extract --> Transform --> Gate
+        Gate --> Analyze
+    end
+
+    Report[("data_quality_report.json")]
+    Stop(["Run stops"])
+    Processed[("data/processed/*.csv<br/>run_manifest.json")]
+    Results["results/<br/>report, charts, tables"]
+    Notebook["Notebook"]
+    Article["Article PDF"]
+
+    Raw --> Extract
+    Manual --> Extract
+    Gate -.->|"writes"| Report
+    Gate -.->|"gate fails"| Stop
+    Analyze --> Processed
+    Processed --> Results
+    Processed --> Notebook --> Article
+
+    classDef store fill:#e8f1fb,stroke:#3b82c4,color:#0b2540
+    classDef guard fill:#fdf1e6,stroke:#c77a2a,color:#3d2206
+    class Raw,Manual,Report,Processed store
+    class Gate guard
 ```
 
 ### Key Design Choices
